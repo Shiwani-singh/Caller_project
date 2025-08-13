@@ -1,0 +1,297 @@
+<%- include('../layout', { path: '/admin/dashboard' }) %>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-speedometer2 me-2"></i>
+        Admin Dashboard
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="/admin/users/new" class="btn btn-primary">
+                <i class="bi bi-person-plus me-1"></i>Add Employee
+            </a>
+            <a href="/admin/callers/new" class="btn btn-success">
+                <i class="bi bi-telephone-plus me-1"></i>Add Caller
+            </a>
+        </div>
+        <a href="/admin/callers/upload" class="btn btn-info">
+            <i class="bi bi-upload me-1"></i>Bulk Upload
+        </a>
+    </div>
+</div>
+
+<!-- Flash Messages -->
+<% if (flash && flash.error && flash.error.length > 0) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <%= flash.error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<% } %>
+
+<% if (flash && flash.success && flash.success.length > 0) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <%= flash.success %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<% } %>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <div class="stats-number"><%= stats.users.total_users || 0 %></div>
+                <div class="stats-label">Total Users</div>
+                <div class="mt-2">
+                    <small class="opacity-75">
+                        <%= stats.users.employees || 0 %> Employees, 
+                        <%= stats.users.super_admins || 0 %> Admins
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <div class="stats-number"><%= stats.callers.total_callers || 0 %></div>
+                <div class="stats-label">Total Callers</div>
+                <div class="mt-2">
+                    <small class="opacity-75">
+                        <%= stats.callers.active_callers || 0 %> Active, 
+                        <%= stats.callers.assigned_callers || 0 %> Assigned
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <div class="stats-number"><%= stats.callers.unassigned_callers || 0 %></div>
+                <div class="stats-label">Unassigned</div>
+                <div class="mt-2">
+                    <small class="opacity-75">
+                        Ready for assignment
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <div class="stats-number"><%= stats.batches ? stats.batches.length : 0 %></div>
+                <div class="stats-label">Active Batches</div>
+                <div class="mt-2">
+                    <small class="opacity-75">
+                        Caller batches
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-lightning me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/users/new" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-person-plus display-4 mb-2"></i>
+                            <span>Add Employee</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/callers/new" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-telephone-plus display-4 mb-2"></i>
+                            <span>Add Caller</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/callers/upload" class="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-upload display-4 mb-2"></i>
+                            <span>Bulk Upload</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/admin/callers" class="btn btn-outline-warning w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-list-ul display-4 mb-2"></i>
+                            <span>Manage Callers</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity & System Status -->
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-activity me-2"></i>Recent Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Action</th>
+                                <th>Details</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <span class="badge bg-success">System</span>
+                                </td>
+                                <td>Application started successfully</td>
+                                <td><small class="text-muted">Just now</small></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <span class="badge bg-info">Database</span>
+                                </td>
+                                <td>MySQL connection established</td>
+                                <td><small class="text-muted">Just now</small></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <span class="badge bg-warning">Cron</span>
+                                </td>
+                                <td>Automatic assignment jobs initialized</td>
+                                <td><small class="text-muted">Just now</small></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-gear me-2"></i>System Status
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>Database</span>
+                        <span class="badge bg-success">Connected</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>Cron Jobs</span>
+                        <span class="badge bg-success">Running</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span>Memory Usage</span>
+                        <span class="badge bg-info">Normal</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar bg-info" style="width: 65%"></div>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <a href="/admin/system" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-gear me-1"></i>System Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Batch Information -->
+<% if (stats.batches && stats.batches.length > 0) { %>
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-collection me-2"></i>Recent Batches
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Batch ID</th>
+                                <th>Total Callers</th>
+                                <th>Assigned</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% stats.batches.slice(0, 5).forEach(batch => { %>
+                            <tr>
+                                <td><code><%= batch.batch_id %></code></td>
+                                <td><%= batch.total_callers %></td>
+                                <td><%= batch.assigned_callers %></td>
+                                <td><small class="text-muted"><%= new Date(batch.batch_start).toLocaleDateString() %></small></td>
+                                <td>
+                                    <a href="/admin/callers?batch_id=<%= batch.batch_id %>" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye me-1"></i>View
+                                    </a>
+                                </td>
+                            </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<% } %>
+
+<script>
+// Auto-refresh dashboard every 30 seconds
+setInterval(function() {
+    // You can implement AJAX refresh here if needed
+    console.log('Dashboard refresh check...');
+}, 30000);
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>

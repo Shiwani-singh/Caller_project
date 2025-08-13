@@ -1,0 +1,378 @@
+<%- include('../layout', { path: '/employee/dashboard' }) %>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-speedometer2 me-2"></i>
+        Employee Dashboard
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="/employee/callers" class="btn btn-primary">
+                <i class="bi bi-list-ul me-1"></i>View All Callers
+            </a>
+            <a href="/employee/reports" class="btn btn-info">
+                <i class="bi bi-graph-up me-1"></i>My Reports
+            </a>
+        </div>
+        <a href="/employee/export" class="btn btn-success">
+            <i class="bi bi-download me-1"></i>Export Data
+        </a>
+    </div>
+</div>
+
+<!-- Flash Messages -->
+<% if (flash && flash.error && flash.error.length > 0) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <%= flash.error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<% } %>
+
+<% if (flash && flash.success && flash.success.length > 0) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <%= flash.success %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<% } %>
+
+<!-- Welcome Message -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <h4 class="card-title">
+                    <i class="bi bi-person-circle me-2"></i>
+                    Welcome back, <%= user.name %>!
+                </h4>
+                <p class="card-text text-muted">
+                    You have <strong><%= stats.totalAssigned %></strong> callers assigned to you.
+                    Keep up the great work!
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <div class="stats-number"><%= stats.totalAssigned %></div>
+                <div class="stats-label">Total Assigned</div>
+                <div class="mt-2">
+                    <small class="opacity-75">
+                        All callers assigned to you
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <div class="stats-number"><%= stats.activeCallers %></div>
+                <div class="stats-label">Active Callers</div>
+                <div class="mt-2">
+                    <small class="opacity-75">
+                        Ready to be called
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-4 col-md-6 mb-4">
+        <div class="card stats-card h-100">
+            <div class="card-body text-center">
+                <div class="stats-number"><%= stats.completedCallers %></div>
+                <div class="stats-label">Completed</div>
+                <div class="mt-2">
+                    <small class="opacity-75">
+                        Successfully called
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assigned Callers -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-telephone me-2"></i>My Assigned Callers
+                </h5>
+                <a href="/employee/callers" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-arrow-right me-1"></i>View All
+                </a>
+            </div>
+            <div class="card-body">
+                <% if (callers && callers.length > 0) { %>
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Assigned</th>
+                                    <th>Batch</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% callers.slice(0, 10).forEach(caller => { %>
+                                <tr data-caller-id="<%= caller.id %>">
+                                    <td>
+                                        <strong><%= caller.name %></strong>
+                                    </td>
+                                    <td>
+                                        <a href="mailto:<%= caller.email %>" class="text-decoration-none">
+                                            <%= caller.email %>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <a href="tel:<%= caller.phone %>" class="text-decoration-none">
+                                            <%= caller.phone %>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            <%= new Date(caller.assigned_at).toLocaleDateString() %>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            <%= caller.batch_id || 'No Batch' %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <button type="button" class="btn btn-outline-success" 
+                                                    onclick="markAsCalled(<%= caller.id %>)">
+                                                <i class="bi bi-check-circle me-1"></i>Called
+                                            </button>
+                                            <a href="/employee/callers/<%= caller.id %>" class="btn btn-outline-primary">
+                                                <i class="bi bi-eye me-1"></i>View
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <% if (callers.length > 10) { %>
+                        <div class="text-center mt-3">
+                            <p class="text-muted">
+                                Showing 10 of <%= callers.length %> callers
+                            </p>
+                            <a href="/employee/callers" class="btn btn-primary">
+                                <i class="bi bi-list-ul me-1"></i>View All Callers
+                            </a>
+                        </div>
+                    <% } %>
+                <% } else { %>
+                    <div class="text-center py-5">
+                        <i class="bi bi-telephone-x display-1 text-muted mb-3"></i>
+                        <h5 class="text-muted">No Callers Assigned</h5>
+                        <p class="text-muted">
+                            You don't have any callers assigned to you at the moment.
+                            <br>New assignments will appear here automatically.
+                        </p>
+                        <div class="mt-3">
+                            <a href="/employee/callers" class="btn btn-primary">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                            </a>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-lightning me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="/employee/callers" class="btn btn-outline-primary w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-list-ul display-4 mb-2"></i>
+                            <span>View All Callers</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/employee/reports" class="btn btn-outline-info w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-graph-up display-4 mb-2"></i>
+                            <span>My Reports</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/employee/export" class="btn btn-outline-success w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-download display-4 mb-2"></i>
+                            <span>Export Data</span>
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="/employee/help" class="btn btn-outline-warning w-100 h-100 d-flex flex-column align-items-center justify-content-center p-3">
+                            <i class="bi bi-question-circle display-4 mb-2"></i>
+                            <span>Help & Support</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-activity me-2"></i>Recent Activity
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">Dashboard Loaded</h6>
+                            <p class="timeline-text text-muted">You viewed your dashboard</p>
+                            <small class="text-muted">Just now</small>
+                        </div>
+                    </div>
+                    
+                    <% if (callers && callers.length > 0) { %>
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">Callers Loaded</h6>
+                            <p class="timeline-text text-muted">Loaded <%= callers.length %> assigned callers</p>
+                            <small class="text-muted">Just now</small>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -35px;
+    top: 0;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 3px #e9ecef;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+}
+
+.timeline-title {
+    margin: 0 0 5px 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.timeline-text {
+    margin: 0 0 5px 0;
+    font-size: 0.85rem;
+}
+</style>
+
+<script>
+// Mark caller as called
+function markAsCalled(callerId) {
+    if (confirm('Mark this caller as called? This action cannot be undone.')) {
+        fetch(`/employee/callers/${callerId}/mark-called`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success alert-dismissible fade show';
+                alert.innerHTML = `
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    ${data.message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                document.querySelector('.card-body').insertBefore(alert, document.querySelector('.table-responsive'));
+                
+                // Remove the row from the table
+                const row = document.querySelector(`tr[data-caller-id="${callerId}"]`);
+                if (row) {
+                    row.remove();
+                }
+                
+                // Auto-dismiss alert after 5 seconds
+                setTimeout(() => {
+                    alert.remove();
+                }, 5000);
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while marking the caller as called.');
+        });
+    }
+}
+
+// Auto-refresh dashboard every 60 seconds
+setInterval(function() {
+    // You can implement AJAX refresh here if needed
+    console.log('Dashboard refresh check...');
+}, 60000);
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>

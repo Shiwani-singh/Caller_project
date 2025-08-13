@@ -1,0 +1,357 @@
+<%- include('../../layout', { path: '/admin/users' }) %>
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="bi bi-person-plus me-2"></i>
+        Add New Employee
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="/admin/users" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Users
+        </a>
+    </div>
+</div>
+
+<!-- Flash Messages -->
+<% if (flash && flash.error && flash.error.length > 0) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <%= flash.error %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<% } %>
+
+<% if (flash && flash.success && flash.success.length > 0) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <%= flash.success %>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+<% } %>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-person-plus me-2"></i>Employee Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/admin/users" id="addEmployeeForm">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label">
+                                <i class="bi bi-person me-1"></i>Full Name *
+                            </label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   placeholder="Enter full name" required
+                                   minlength="2" maxlength="100">
+                            <div class="form-text">Minimum 2 characters, maximum 100 characters</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">
+                                <i class="bi bi-envelope me-1"></i>Email Address *
+                            </label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   placeholder="Enter email address" required>
+                            <div class="form-text">Must be a valid email address</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="phone" class="form-label">
+                                <i class="bi bi-telephone me-1"></i>Phone Number *
+                            </label>
+                            <input type="tel" class="form-control" id="phone" name="phone" 
+                                   placeholder="Enter phone number" required
+                                   pattern="[\+]?[0-9\s\-\(\)]+" minlength="10" maxlength="20">
+                            <div class="form-text">Minimum 10 digits, maximum 20 characters</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="role_id" class="form-label">
+                                <i class="bi bi-shield me-1"></i>Role *
+                            </label>
+                            <select class="form-select" id="role_id" name="role_id" required>
+                                <option value="">Select a role</option>
+                                <option value="2">Employee</option>
+                                <option value="1">Super Admin</option>
+                            </select>
+                            <div class="form-text">Choose the appropriate role for this user</div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">
+                                <i class="bi bi-lock me-1"></i>Password *
+                            </label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       placeholder="Enter password" required minlength="8">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('password')">
+                                    <i class="bi bi-eye" id="passwordIcon"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">
+                                Minimum 8 characters with uppercase, lowercase, and number
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="confirmPassword" class="form-label">
+                                <i class="bi bi-lock-fill me-1"></i>Confirm Password *
+                            </label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" 
+                                       placeholder="Confirm password" required minlength="8">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('confirmPassword')">
+                                    <i class="bi bi-eye" id="confirmPasswordIcon"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">Must match the password above</div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Reset Form
+                        </button>
+                        <div>
+                            <a href="/admin/users" class="btn btn-outline-secondary me-2">
+                                <i class="bi bi-x-circle me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle me-1"></i>Create Employee
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Form Guidelines
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6 class="text-primary">Required Fields</h6>
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-check-circle-fill text-success me-1"></i>Full Name</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-1"></i>Email Address</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-1"></i>Phone Number</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-1"></i>Role</li>
+                    <li><i class="bi bi-check-circle-fill text-success me-1"></i>Password</li>
+                </ul>
+                
+                <hr>
+                
+                <h6 class="text-primary">Password Requirements</h6>
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-arrow-right text-muted me-1"></i>Minimum 8 characters</li>
+                    <li><i class="bi bi-arrow-right text-muted me-1"></i>At least 1 uppercase letter</li>
+                    <li><i class="bi bi-arrow-right text-muted me-1"></i>At least 1 lowercase letter</li>
+                    <li><i class="bi bi-arrow-right text-muted me-1"></i>At least 1 number</li>
+                </ul>
+                
+                <hr>
+                
+                <h6 class="text-primary">Role Descriptions</h6>
+                <div class="small">
+                    <p><strong>Employee:</strong> Can view assigned callers, mark them as called, and access basic features.</p>
+                    <p><strong>Super Admin:</strong> Full access to all system features including user management.</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-lightbulb me-2"></i>Tips
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Pro Tip:</strong> Use a strong password that combines letters, numbers, and special characters for better security.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Toggle password visibility
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = document.getElementById(fieldId === 'password' ? 'passwordIcon' : 'confirmPasswordIcon');
+    
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+    } else {
+        field.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+    }
+}
+
+// Reset form
+function resetForm() {
+    if (confirm('Are you sure you want to reset the form? All entered data will be lost.')) {
+        document.getElementById('addEmployeeForm').reset();
+        // Reset password fields to password type
+        document.getElementById('password').type = 'password';
+        document.getElementById('confirmPassword').type = 'password';
+        // Reset icons
+        document.getElementById('passwordIcon').className = 'bi bi-eye';
+        document.getElementById('confirmPasswordIcon').className = 'bi bi-eye';
+    }
+}
+
+// Form validation
+document.getElementById('addEmployeeForm').addEventListener('submit', function(e) {
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const role_id = document.getElementById('role_id').value;
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    
+    // Clear previous error states
+    document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    document.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+    
+    let isValid = true;
+    
+    // Validate name
+    if (name.length < 2) {
+        showFieldError('name', 'Name must be at least 2 characters long');
+        isValid = false;
+    }
+    
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showFieldError('email', 'Please enter a valid email address');
+        isValid = false;
+    }
+    
+    // Validate phone
+    const phoneRegex = /^[\+]?[0-9\s\-\(\)]+$/;
+    if (!phoneRegex.test(phone) || phone.length < 10) {
+        showFieldError('phone', 'Please enter a valid phone number (minimum 10 digits)');
+        isValid = false;
+    }
+    
+    // Validate role
+    if (!role_id) {
+        showFieldError('role_id', 'Please select a role');
+        isValid = false;
+    }
+    
+    // Validate password
+    if (password.length < 8) {
+        showFieldError('password', 'Password must be at least 8 characters long');
+        isValid = false;
+    }
+    
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/;
+    if (!passwordRegex.test(password)) {
+        showFieldError('password', 'Password must contain at least one lowercase letter, one uppercase letter, and one number');
+        isValid = false;
+    }
+    
+    // Validate password confirmation
+    if (password !== confirmPassword) {
+        showFieldError('confirmPassword', 'Passwords do not match');
+        isValid = false;
+    }
+    
+    if (!isValid) {
+        e.preventDefault();
+        // Scroll to first error
+        const firstError = document.querySelector('.is-invalid');
+        if (firstError) {
+            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+});
+
+// Show field error
+function showFieldError(fieldId, message) {
+    const field = document.getElementById(fieldId);
+    field.classList.add('is-invalid');
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'invalid-feedback';
+    errorDiv.textContent = message;
+    
+    field.parentNode.appendChild(errorDiv);
+}
+
+// Real-time validation
+document.getElementById('name').addEventListener('blur', function() {
+    const name = this.value.trim();
+    if (name.length > 0 && name.length < 2) {
+        showFieldError('name', 'Name must be at least 2 characters long');
+    } else {
+        this.classList.remove('is-invalid');
+        const errorDiv = this.parentNode.querySelector('.invalid-feedback');
+        if (errorDiv) errorDiv.remove();
+    }
+});
+
+document.getElementById('email').addEventListener('blur', function() {
+    const email = this.value.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email.length > 0 && !emailRegex.test(email)) {
+        showFieldError('email', 'Please enter a valid email address');
+    } else {
+        this.classList.remove('is-invalid');
+        const errorDiv = this.parentNode.querySelector('.invalid-feedback');
+        if (errorDiv) errorDiv.remove();
+    }
+});
+
+document.getElementById('phone').addEventListener('blur', function() {
+    const phone = this.value.trim();
+    const phoneRegex = /^[\+]?[0-9\s\-\(\)]+$/;
+    if (phone.length > 0 && (!phoneRegex.test(phone) || phone.length < 10)) {
+        showFieldError('phone', 'Please enter a valid phone number (minimum 10 digits)');
+    } else {
+        this.classList.remove('is-invalid');
+        const errorDiv = this.parentNode.querySelector('.invalid-feedback');
+        if (errorDiv) errorDiv.remove();
+    }
+});
+
+document.getElementById('confirmPassword').addEventListener('blur', function() {
+    const password = document.getElementById('password').value;
+    const confirmPassword = this.value;
+    if (confirmPassword.length > 0 && password !== confirmPassword) {
+        showFieldError('confirmPassword', 'Passwords do not match');
+    } else {
+        this.classList.remove('is-invalid');
+        const errorDiv = this.parentNode.querySelector('.invalid-feedback');
+        if (errorDiv) errorDiv.remove();
+    }
+});
+
+// Auto-focus on name field
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('name').focus();
+});
+</script>
