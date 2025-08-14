@@ -1,7 +1,7 @@
 // Validation schemas using Zod for the Call Manager application
 // Provides consistent validation across frontend and backend
 
-const { z } = require('zod');
+import { z } from 'zod';
 
 // User validation schemas
 const userSchemas = {
@@ -293,7 +293,7 @@ function sanitizeData(data) {
 }
 
 // Export all schemas and helper functions
-module.exports = {
+export {
   userSchemas,
   callerSchemas,
   assignmentSchemas,

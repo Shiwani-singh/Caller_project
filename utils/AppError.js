@@ -1,7 +1,7 @@
 // Custom AppError class for centralized error handling
 // This class extends the built-in Error class and provides additional functionality
 
-const { getErrorByCode } = require('../config/errorCodes');
+import { getErrorByCode } from '../config/errorCodes.js';
 
 class AppError extends Error {
   constructor(message, statusCode, errorCode, isOperational = true) {
@@ -134,4 +134,4 @@ class AppError extends Error {
   }
 }
 
-module.exports = AppError;
+export default AppError;

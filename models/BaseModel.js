@@ -1,10 +1,10 @@
 // Base database model for the Call Manager application
 // Provides MySQL pool connection, query execution, and transaction handling
 
-const mysql = require('mysql2/promise');
-const config = require('../config');
-const logger = require('../utils/logger');
-const AppError = require('../utils/AppError');
+import mysql from 'mysql2/promise';
+import config from '../config/index.js';
+import logger from '../utils/logger.js';
+import AppError from '../utils/AppError.js';
 
 class BaseModel {
   constructor() {
@@ -237,20 +237,16 @@ class BaseModel {
   }
 }
 
-// Create and export a singleton instance
-const baseModel = new BaseModel();
+// Export the class instead of an instance
+export default BaseModel;
 
 // Handle graceful shutdown
 process.on('SIGINT', async () => {
   logger.info('Received SIGINT, closing database connections...');
-  await baseModel.closePool();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   logger.info('Received SIGTERM, closing database connections...');
-  await baseModel.closePool();
   process.exit(0);
 });
-
-module.exports = baseModel;

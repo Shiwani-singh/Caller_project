@@ -1,9 +1,9 @@
 // Authentication middleware for the Call Manager application
 // Handles user authentication, role checking, and session management
 
-const User = require('../models/User');
-const AppError = require('../utils/AppError');
-const logger = require('../utils/logger');
+import User from '../models/User.js';
+import AppError from '../utils/AppError.js';
+import logger from '../utils/logger.js';
 
 // Check if user is authenticated
 const requireAuth = (req, res, next) => {
@@ -251,7 +251,7 @@ const redirectByRole = (req, res, next) => {
   }
 };
 
-module.exports = {
+export {
   requireAuth,
   requireGuest,
   requireRole,

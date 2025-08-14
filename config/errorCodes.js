@@ -173,7 +173,7 @@ function getAllErrorCodes() {
   return errorCodes;
 }
 
-module.exports = {
+export {
   errorCodes,
   getErrorByCode,
   getAllErrorCodes

@@ -1,23 +1,27 @@
 // Main server file for the Call Manager application
 // Sets up Express, middleware, routes, and starts the application
 
-const express = require('express');
-const session = require('express-session');
-const flash = require('connect-flash');
-const helmet = require('helmet');
-const csrf = require('csurf');
-const rateLimit = require('express-rate-limit');
-const path = require('path');
-const config = require('./config');
-const logger = require('./utils/logger');
-const cronManager = require('./utils/cronJobs');
-const { errorHandler, notFoundHandler } = require('./middlewares/errorHandler');
-const { sessionConfig, authRateLimit } = require('./middlewares/auth');
+import express from 'express';
+import session from 'express-session';
+import flash from 'connect-flash';
+import helmet from 'helmet';
+import csrf from 'csurf';
+import rateLimit from 'express-rate-limit';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import config from './config/index.js';
+import logger from './utils/logger.js';
+import cronManager from './utils/cronJobs.js';
+import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
+import { sessionConfig, authRateLimit } from './middlewares/auth.js';
 
 // Import routes
-const authRoutes = require('./routes/auth');
-const adminRoutes = require('./routes/admin');
-const employeeRoutes = require('./routes/employee');
+import authRoutes from './routes/auth.js';
+import adminRoutes from './routes/admin.js';
+import employeeRoutes from './routes/employee.js';
+
+// Import User model for database operations
+import User from './models/User.js';
 
 // Create Express app
 const app = express();
@@ -27,7 +31,9 @@ app.set('trust proxy', 1);
 
 // View engine setup
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 
 // Security middleware
 app.use(helmet({
@@ -148,7 +154,6 @@ app.use(errorHandler);
 // Database connection test function
 async function testDatabaseConnection() {
   try {
-    const User = require('./models/User');
     await User.testConnection();
     logger.success('Database connection test passed');
     return true;
@@ -199,7 +204,6 @@ async function startApplication() {
         logger.info('Cron jobs stopped');
         
         // Close database connections
-        const User = require('./models/User');
         User.closePool();
         logger.info('Database connections closed');
         
@@ -236,8 +240,9 @@ async function startApplication() {
 }
 
 // Start the application
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   startApplication();
 }
 
-module.exports = app;
+
+export default app;

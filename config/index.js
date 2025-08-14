@@ -1,7 +1,8 @@
 // Configuration loader for the Call Manager application
 // This file centralizes all environment variables and provides defaults
 
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config();
 
 const config = {
   // Database configuration
@@ -72,4 +73,4 @@ for (const configPath of requiredConfigs) {
   }
 }
 
-module.exports = config;
+export default config;

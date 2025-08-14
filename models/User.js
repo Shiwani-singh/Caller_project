@@ -1,10 +1,10 @@
 // User model for the Call Manager application
 // Handles user authentication, creation, and management
 
-const BaseModel = require('./BaseModel');
-const bcrypt = require('bcrypt');
-const AppError = require('../utils/AppError');
-const logger = require('../utils/logger');
+import BaseModel from './BaseModel.js';
+import bcrypt from 'bcrypt';
+import AppError from '../utils/AppError.js';
+import logger from '../utils/logger.js';
 
 class User extends BaseModel {
   constructor() {
@@ -335,4 +335,6 @@ class User extends BaseModel {
   }
 }
 
-module.exports = new User();
+// Create and export an instance
+const userModel = new User();
+export default userModel;

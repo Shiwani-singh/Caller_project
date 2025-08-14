@@ -1,9 +1,9 @@
 // Error handling middleware for the Call Manager application
 // Catches and processes all application errors with appropriate responses
 
-const AppError = require('../utils/AppError');
-const logger = require('../utils/logger');
-const config = require('../config');
+import AppError from '../utils/AppError.js';
+import logger from '../utils/logger.js';
+import config from '../config/index.js';
 
 // Handle Zod validation errors
 const handleZodError = (error) => {
@@ -338,7 +338,7 @@ const productionErrorHandler = (error, req, res, next) => {
   next(error);
 };
 
-module.exports = {
+export {
   errorHandler,
   notFoundHandler,
   asyncHandler,

@@ -1,9 +1,9 @@
 // Caller model for the Call Manager application
 // Handles caller creation, assignment, and management
 
-const BaseModel = require('./BaseModel');
-const AppError = require('../utils/AppError');
-const logger = require('../utils/logger');
+import BaseModel from './BaseModel.js';
+import AppError from '../utils/AppError.js';
+import logger from '../utils/logger.js';
 
 class Caller extends BaseModel {
   constructor() {
@@ -432,4 +432,6 @@ class Caller extends BaseModel {
   }
 }
 
-module.exports = new Caller();
+// Create and export an instance
+const callerModel = new Caller();
+export default callerModel;

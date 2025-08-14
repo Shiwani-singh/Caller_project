@@ -1,12 +1,12 @@
 // CSV handling utility for the Call Manager application
 // Provides CSV parsing, validation, and generation functionality
 
-const fastcsv = require('fast-csv');
-const fs = require('fs');
-const path = require('path');
-const { validateData, sanitizeData } = require('./validation');
-const { callerSchemas } = require('./validation');
-const logger = require('./logger');
+import fastcsv from 'fast-csv';
+import fs from 'fs';
+import path from 'path';
+import { validateData, sanitizeData } from './validation.js';
+import { callerSchemas } from './validation.js';
+import logger from './logger.js';
 
 class CSVHandler {
   constructor() {
@@ -296,4 +296,4 @@ class CSVHandler {
   }
 }
 
-module.exports = new CSVHandler();
+export default new CSVHandler();

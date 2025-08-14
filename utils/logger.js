@@ -1,11 +1,15 @@
 // Winston-based logger for the Call Manager application
 // Provides color-coded logging, file logging, and uncaught error handling
 
-const winston = require('winston');
-const chalk = require('chalk');
-const path = require('path');
-const fs = require('fs');
-const config = require('../config');
+import winston from 'winston';
+import chalk from 'chalk';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import config from '../config/index.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Ensure logs directory exists
 const logsDir = path.join(__dirname, '../logs');
@@ -140,7 +144,7 @@ logger.warning = (message, ...meta) => {
   logger.warn(`⚠️  ${message}`, ...meta);
 };
 
-logger.error = (message, ...meta) => {
+logger.errorLog = (message, ...meta) => {
   logger.error(`❌ ${message}`, ...meta);
 };
 
@@ -211,4 +215,4 @@ logger.logRequest = (req, res, next) => {
   next();
 };
 
-module.exports = logger;
+export default logger;

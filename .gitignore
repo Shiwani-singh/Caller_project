@@ -1,0 +1,12 @@
+# Environment variables
+.env
+
+# Node dependencies
+node_modules/
+
+# Optional: Ignore editor/formatter configs only if local and not shared
+.prettierrc
+.prettierignore
+.eslintrc.js
+.eslintignore
+

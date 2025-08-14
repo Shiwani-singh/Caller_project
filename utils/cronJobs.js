@@ -1,11 +1,11 @@
 // Cron job utility for the Call Manager application
 // Handles automatic caller assignment and other scheduled tasks
 
-const cron = require('node-cron');
-const User = require('../models/User');
-const Caller = require('../models/Caller');
-const logger = require('./logger');
-const config = require('../config');
+import cron from 'node-cron';
+import User from '../models/User.js';
+import Caller from '../models/Caller.js';
+import logger from './logger.js';
+import config from '../config/index.js';
 
 class CronJobManager {
   constructor() {
@@ -329,4 +329,4 @@ process.on('SIGTERM', async () => {
   cronManager.stopAllJobs();
 });
 
-module.exports = cronManager;
+export default cronManager;
