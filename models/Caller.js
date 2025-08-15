@@ -92,13 +92,11 @@ class Caller extends BaseModel {
         WHERE c.id = ?
       `;
       
-      const caller = await this.queryOne(sql, [id]);
-      
-      if (!caller) {
+      const result = await this.query(sql, [id]);
+      if (!result || result.length === 0) {
         throw AppError.notFoundError('Caller not found');
       }
-      
-      return caller;
+      return result[0];
     } catch (error) {
       logger.error('Error finding caller by ID:', { id, error: error.message });
       throw error;

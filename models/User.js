@@ -62,12 +62,10 @@ class User extends BaseModel {
       `;
       
       const users = await this.query(sql, [id]);
-      const user = users[0];
-      
-      if (!user) {
+      if (!users || users.length === 0) {
         throw AppError.notFoundError('User not found');
       }
-      
+      const user = users[0];
       return user;
     } catch (error) {
       logger.error('Error finding user by ID:', { id, error: error.message });
@@ -87,6 +85,7 @@ class User extends BaseModel {
       `;
       
       const users = await this.query(sql, [email]);
+      if (!users || users.length === 0) return null;
       return users[0];
     } catch (error) {
       logger.info(email);
@@ -107,6 +106,7 @@ class User extends BaseModel {
       `;
       
       const users = await this.query(sql, [phone]);
+      if (!users || users.length === 0) return null;
       return users[0];
     } catch (error) {
       logger.error('Error finding user by phone:', { phone, error: error.message });
@@ -167,7 +167,7 @@ class User extends BaseModel {
       `;
       
       const countResult = await this.query(countSql, params);
-      const totalCount = countResult[0].count;
+      const totalCount = countResult && countResult.length > 0 ? countResult[0].count : 0;
 
       // Get paginated results
       const sql = `
@@ -326,7 +326,7 @@ class User extends BaseModel {
       const fullSql = `SELECT COUNT(*) as count FROM ${this.tableName} ${whereClause}`;
       
       const result = await this.query(fullSql, params);
-      return result[0].count > 0;
+      return result && result.length > 0 ? result[0].count > 0 : false;
     } catch (error) {
       logger.error('Error checking if user exists:', { conditions, error: error.message });
       throw error;
@@ -346,7 +346,12 @@ class User extends BaseModel {
       `;
       
       const results = await this.query(sql);
-      return results[0];
+      return results && results.length > 0 ? results[0] : {
+        total_users: 0,
+        super_admins: 0,
+        employees: 0,
+        callers: 0
+      };
     } catch (error) {
       logger.error('Error getting user statistics:', error);
       throw error;

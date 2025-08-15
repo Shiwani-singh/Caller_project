@@ -13,7 +13,8 @@ class AuthController {
     res.render('auth/login', {
       title: 'Login - Call Manager',
       error: req.flash('error'),
-      success: req.flash('success')
+      success: req.flash('success'),
+      path: '/auth/login'
     });
   }
 
@@ -74,19 +75,25 @@ class AuthController {
   // Handle user logout
   handleLogout(req, res) {
     try {
-      const userId = req.session.userId;
-      req.session.destroy((err) => {
-        if (err) {
-          logger.error('Error destroying session:', err);
-          req.flash('error', 'Logout failed');
-          return res.redirect('/dashboard');
-        }
-        
-        logger.auth(`User logged out successfully: ID ${userId}`);
+      if (req.session) {
+        const userId = req.session.userId;
+        req.session.destroy((err) => {
+          if (err) {
+            logger.error('Error destroying session:', err);
+            req.flash('error', 'Logout failed');
+            return res.redirect('/dashboard');
+          }
+          logger.auth(`User logged out successfully: ID ${userId}`);
+          res.clearCookie('callmanager.sid');
+          req.flash('success', 'You have been logged out successfully');
+          res.redirect('/auth/login');
+        });
+      } else {
+        // No session, just redirect
         res.clearCookie('callmanager.sid');
         req.flash('success', 'You have been logged out successfully');
         res.redirect('/auth/login');
-      });
+      }
     } catch (error) {
       logger.error('Logout error:', error);
       req.flash('error', 'Logout failed');
@@ -105,7 +112,8 @@ class AuthController {
         title: 'My Profile - Call Manager',
         user,
         error: req.flash('error'),
-        success: req.flash('success')
+        success: req.flash('success'),
+        path: '/auth/profile'
       });
     } catch (error) {
       logger.error('Error loading user profile:', error);

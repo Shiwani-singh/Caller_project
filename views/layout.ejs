@@ -214,7 +214,11 @@
                 
                 <!-- Main content -->
                 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
-                    <%- body %>
+                    <% if (typeof body !== 'undefined') { %>
+                        <%- body %>
+                    <% } else { %>
+                        <div class="alert alert-danger mt-4">EJS layout error: <code>body</code> is not defined. Make sure you are using a layout engine or passing a <code>body</code> variable when rendering.</div>
+                    <% } %>
                 </main>
             </div>
         </div>

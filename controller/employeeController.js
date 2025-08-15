@@ -24,7 +24,8 @@ class EmployeeController {
         title: 'Employee Dashboard - Call Manager',
         user: req.user || {},
         callers: assignedCallers || [],
-        stats: stats
+        stats: stats,
+        path: '/employee/dashboard'
       });
     } catch (error) {
       logger.error('Error loading employee dashboard:', error);
@@ -38,7 +39,8 @@ class EmployeeController {
           totalAssigned: 0,
           activeCallers: 0,
           completedCallers: 0
-        }
+        },
+        path: '/employee/dashboard'
       });
     }
   }
@@ -64,7 +66,8 @@ class EmployeeController {
         user: req.user,
         callers: result.callers || [],
         pagination: result.pagination || {},
-        filters: options
+        filters: options,
+        path: '/employee/callers'
       });
     } catch (error) {
       logger.error('Error loading employee callers:', error);
@@ -93,7 +96,8 @@ class EmployeeController {
       res.render('employee/callers/view', {
         title: `Caller: ${caller.name} - Call Manager`,
         user: req.user,
-        caller
+        caller,
+        path: `/employee/callers/${callerId}`
       });
     } catch (error) {
       logger.error('Error loading caller details:', error);
@@ -172,7 +176,8 @@ class EmployeeController {
       res.render('employee/callers/edit', {
         title: `Edit Caller: ${caller.name} - Call Manager`,
         user: req.user,
-        caller
+        caller,
+        path: `/employee/callers/${callerId}/edit`
       });
     } catch (error) {
       logger.error('Error loading caller for edit:', error);
@@ -224,7 +229,8 @@ class EmployeeController {
   showProfile(req, res) {
     res.render('employee/profile', {
       title: 'My Profile - Call Manager',
-      user: req.user
+      user: req.user,
+      path: '/employee/profile'
     });
   }
 
@@ -260,7 +266,8 @@ class EmployeeController {
         title: 'My Reports - Call Manager',
         user: req.user,
         stats,
-        callersByBatch
+        callersByBatch,
+        path: '/employee/reports'
       });
     } catch (error) {
       logger.error('Error loading employee reports:', error);
@@ -320,7 +327,8 @@ class EmployeeController {
   showHelp(req, res) {
     res.render('employee/help', {
       title: 'Help & Support - Call Manager',
-      user: req.user
+      user: req.user,
+      path: '/employee/help'
     });
   }
 
@@ -395,7 +403,8 @@ class EmployeeController {
         title: `Call History: ${caller.name} - Call Manager`,
         user: req.user,
         caller,
-        callHistory: [] // Placeholder for actual call history
+        callHistory: [], // Placeholder for actual call history
+        path: `/employee/callers/${callerId}/history`
       });
     } catch (error) {
       logger.error('Error loading caller history:', error);

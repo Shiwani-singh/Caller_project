@@ -14,6 +14,7 @@ import config from './config/index.js';
 import logger from './utils/logger.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 import { sessionConfig } from './middlewares/auth.js';
+import expressLayouts from 'express-ejs-layouts';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -31,6 +32,8 @@ const app = express();
 
 // View engine setup
 app.set('view engine', 'ejs');
+app.use(expressLayouts);
+app.set('layout', 'layout'); // uses views/layout.ejs by default
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

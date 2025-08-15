@@ -1,5 +1,3 @@
-<%- include('../layout', { path: '/admin/dashboard', body: 'test' }) %>
-
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">
         <i class="bi bi-speedometer2 me-2"></i>
@@ -57,12 +55,12 @@
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="card stats-card h-100">
             <div class="card-body text-center">
-                <div class="stats-number"><%= stats.callers.total_callers || 0 %></div>
+                <div class="stats-number"><%= stats.callers && stats.callers.total_callers ? stats.callers.total_callers : 0 %></div>
                 <div class="stats-label">Total Callers</div>
                 <div class="mt-2">
                     <small class="opacity-75">
-                        <%= stats.callers.active_callers || 0 %> Active, 
-                        <%= stats.callers.assigned_callers || 0 %> Assigned
+                        <%= stats.callers && stats.callers.active_callers ? stats.callers.active_callers : 0 %> Active, 
+                        <%= stats.callers && stats.callers.assigned_callers ? stats.callers.assigned_callers : 0 %> Assigned
                     </small>
                 </div>
             </div>
@@ -72,7 +70,7 @@
     <div class="col-xl-3 col-md-6 mb-4">
         <div class="card stats-card h-100">
             <div class="card-body text-center">
-                <div class="stats-number"><%= stats.callers.unassigned_callers || 0 %></div>
+                <div class="stats-number"><%= stats.callers && stats.callers.unassigned_callers ? stats.callers.unassigned_callers : 0 %></div>
                 <div class="stats-label">Unassigned</div>
                 <div class="mt-2">
                     <small class="opacity-75">

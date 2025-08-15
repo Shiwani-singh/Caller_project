@@ -1,18 +1,16 @@
-<%- include('../layout', { title: 'Manage Callers' }) %>
-
 <div class="container-fluid">
   <div class="row">
     <div class="col-12">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">Manage Callers</h1>
         <div>
-          <a href="/v1/admin/callers/new" class="btn btn-primary me-2">
+          <a href="/admin/callers/new" class="btn btn-primary me-2">
             <i class="fas fa-plus"></i> Add Caller
           </a>
-          <a href="/v1/admin/callers/bulk-upload" class="btn btn-success me-2">
+          <a href="/admin/callers/bulk-upload" class="btn btn-success me-2">
             <i class="fas fa-upload"></i> Bulk Upload
           </a>
-          <a href="/v1/admin/callers/assign" class="btn btn-warning">
+          <a href="/admin/callers/assign" class="btn btn-warning">
             <i class="fas fa-user-plus"></i> Assign Callers
           </a>
         </div>
@@ -136,7 +134,7 @@
                       <td><%= new Date(caller.created_at).toLocaleDateString() %></td>
                       <td>
                         <div class="btn-group" role="group">
-                          <a href="/v1/admin/callers/<%= caller.id %>/edit" class="btn btn-sm btn-outline-primary">
+                          <a href="/admin/callers/<%= caller.id %>/edit" class="btn btn-sm btn-outline-primary">
                             <i class="fas fa-edit"></i>
                           </a>
                           <button type="button" class="btn btn-sm btn-outline-danger" 
@@ -157,7 +155,7 @@
                 <ul class="pagination justify-content-center">
                   <% if (pagination.page > 1) { %>
                     <li class="page-item">
-                      <a class="page-link" href="/v1/admin/callers?page=<%= pagination.page - 1 %>&<%= new URLSearchParams({...locals, page: undefined}).toString() %>">
+                      <a class="page-link" href="/admin/callers?page=<%= pagination.page - 1 %>&<%= new URLSearchParams({...locals, page: undefined}).toString() %>">
                         Previous
                       </a>
                     </li>
@@ -165,7 +163,7 @@
                   
                   <% for (let i = 1; i <= pagination.pages; i++) { %>
                     <li class="page-item <%= i === pagination.page ? 'active' : '' %>">
-                      <a class="page-link" href="/v1/admin/callers?page=<%= i %>&<%= new URLSearchParams({...locals, page: undefined}).toString() %>">
+                      <a class="page-link" href="/admin/callers?page=<%= i %>&<%= new URLSearchParams({...locals, page: undefined}).toString() %>">
                         <%= i %>
                       </a>
                     </li>
@@ -173,7 +171,7 @@
                   
                   <% if (pagination.page < pagination.pages) { %>
                     <li class="page-item">
-                      <a class="page-link" href="/v1/admin/callers?page=<%= pagination.page + 1 %>&<%= new URLSearchParams({...locals, page: undefined}).toString() %>">
+                      <a class="page-link" href="/admin/callers?page=<%= pagination.page + 1 %>&<%= new URLSearchParams({...locals, page: undefined}).toString() %>">
                         Next
                       </a>
                     </li>
@@ -197,7 +195,7 @@
 <script>
 function confirmDelete(callerId, callerName) {
   if (confirm(`Are you sure you want to delete caller "${callerName}"? This action cannot be undone.`)) {
-    window.location.href = `/v1/admin/callers/${callerId}/delete`;
+    window.location.href = `/admin/callers/${callerId}/delete`;
   }
 }
 </script>

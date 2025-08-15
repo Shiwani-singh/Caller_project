@@ -12,12 +12,12 @@ const router = express.Router();
 router.get('/login', requireGuest, authController.showLogin);
 
 // POST /auth/login - Handle user login
-router.post('/login', requireGuest, asyncHandler(authController.handleLogin.bind(authController)));
+router.post('/login', requireGuest, asyncHandler(authController.handleLogin));
 
 // GET /auth/logout - Handle user logout
 router.get('/logout', requireAuth, authController.handleLogout);
 
 // GET /auth/profile - Show user profile
-router.get('/profile', requireAuth, asyncHandler(authController.showProfile.bind(authController)));
+router.get('/profile', requireAuth, asyncHandler(authController.showProfile));
 
 export default router;

@@ -58,19 +58,32 @@ class AdminController {
       const callerStats = await Caller.getStats();
       const batchStats = await Caller.getBatchStats();
 
+      // Defensive: If callerStats is empty, use default stats
+      let callerStatsObj = {
+        total_callers: 0,
+        active_callers: 0,
+        inactive_callers: 0,
+        assigned_callers: 0,
+        unassigned_callers: 0
+      };
+      if (Array.isArray(callerStats) && callerStats.length > 0) {
+        callerStatsObj = callerStats[0];
+      }
+
       res.render('admin/dashboard', {
         title: 'Admin Dashboard - Call Manager',
         user: req.user,
         stats: {
           users: userStats,
-          callers: callerStats[0],
+          callers: callerStatsObj,
           batches: batchStats
-        }
+        },
+        path: '/admin/dashboard'
       });
     } catch (error) {
       logger.error('Error loading admin dashboard:', error);
       req.flash('error', 'Failed to load dashboard');
-      res.redirect('/v1/dashboard');
+      res.redirect('/dashboard');
     }
   }
 
@@ -95,12 +108,13 @@ class AdminController {
         user: req.user,
         users: result.users,
         pagination: result.pagination,
-        filters: options
+        filters: options,
+        path: '/admin/users'
       });
     } catch (error) {
       logger.error('Error loading users:', error);
       req.flash('error', 'Failed to load users');
-      res.redirect('/v1/admin/dashboard');
+      res.redirect('/admin/dashboard');
     }
   }
 
@@ -108,7 +122,8 @@ class AdminController {
   showCreateUser(req, res) {
     res.render('admin/users/new', {
       title: 'Create User - Call Manager',
-      user: req.user
+      user: req.user,
+      path: '/admin/users/new'
     });
   }
 
@@ -119,7 +134,7 @@ class AdminController {
       const validation = validateData(userSchemas.create, req.body);
       if (!validation.success) {
         req.flash('error', validation.errors[0].message);
-        return res.redirect('/v1/admin/users/new');
+        return res.redirect('/admin/users/new');
       }
 
       const userData = validation.data;
@@ -128,13 +143,13 @@ class AdminController {
       const existingUser = await User.findByEmail(userData.email);
       if (existingUser) {
         req.flash('error', 'A user with this email already exists');
-        return res.redirect('/v1/admin/users/new');
+        return res.redirect('/admin/users/new');
       }
 
       const existingPhone = await User.findByPhone(userData.phone);
       if (existingPhone) {
         req.flash('error', 'A user with this phone number already exists');
-        return res.redirect('/v1/admin/users/new');
+        return res.redirect('/admin/users/new');
       }
 
       // Create user
@@ -143,7 +158,7 @@ class AdminController {
       logger.auth(`New user created by ${req.user.email}: ${newUser.email} (${newUser.role_id})`);
       req.flash('success', `User ${newUser.name} has been created successfully`);
       
-      res.redirect('/v1/admin/users');
+      res.redirect('/admin/users');
     } catch (error) {
       logger.error('Error creating user:', error);
       
@@ -153,7 +168,7 @@ class AdminController {
         req.flash('error', 'Failed to create user. Please try again.');
       }
       
-      res.redirect('/v1/admin/users/new');
+      res.redirect('/admin/users/new');
     }
   }
 
@@ -165,18 +180,19 @@ class AdminController {
       
       if (!user) {
         req.flash('error', 'User not found');
-        return res.redirect('/v1/admin/users');
+        return res.redirect('/admin/users');
       }
       
       res.render('admin/users/edit', {
         title: 'Edit User - Call Manager',
         user: req.user,
-        editUser: user
+        editUser: user,
+        path: `/admin/users/${userId}/edit`
       });
     } catch (error) {
       logger.error('Error loading user for edit:', error);
       req.flash('error', 'Failed to load user');
-      res.redirect('/v1/admin/users');
+      res.redirect('/admin/users');
     }
   }
 
@@ -190,7 +206,7 @@ class AdminController {
       const validation = validateData(userSchemas.update, updateData);
       if (!validation.success) {
         req.flash('error', validation.errors[0].message);
-        return res.redirect(`/v1/admin/users/${userId}/edit`);
+        return res.redirect(`/admin/users/${userId}/edit`);
       }
 
       const userData = validation.data;
@@ -200,7 +216,7 @@ class AdminController {
         const existingUser = await User.findByEmail(userData.email);
         if (existingUser && existingUser.id !== parseInt(userId)) {
           req.flash('error', 'A user with this email already exists');
-          return res.redirect(`/v1/admin/users/${userId}/edit`);
+          return res.redirect(`/admin/users/${userId}/edit`);
         }
       }
 
@@ -209,7 +225,7 @@ class AdminController {
         const existingUser = await User.findByPhone(userData.phone);
         if (existingUser && existingUser.id !== parseInt(userId)) {
           req.flash('error', 'A user with this phone number already exists');
-          return res.redirect(`/v1/admin/users/${userId}/edit`);
+          return res.redirect(`/admin/users/${userId}/edit`);
         }
       }
 
@@ -219,7 +235,7 @@ class AdminController {
       logger.auth(`User updated by ${req.user.email}: ${updatedUser.email}`);
       req.flash('success', 'User updated successfully');
       
-      res.redirect('/v1/admin/users');
+      res.redirect('/admin/users');
     } catch (error) {
       logger.error('Error updating user:', error);
       
@@ -229,7 +245,7 @@ class AdminController {
         req.flash('error', 'Failed to update user. Please try again.');
       }
       
-      res.redirect(`/v1/admin/users/${req.params.id}/edit`);
+      res.redirect(`/admin/users/${req.params.id}/edit`);
     }
   }
 
@@ -242,11 +258,11 @@ class AdminController {
       logger.auth(`User deleted by ${req.user.email}: ID ${userId}`);
       req.flash('success', 'User deleted successfully');
       
-      res.redirect('/v1/admin/users');
+      res.redirect('/admin/users');
     } catch (error) {
       logger.error('Error deleting user:', error);
       req.flash('error', 'Failed to delete user');
-      res.redirect('/v1/admin/users');
+      res.redirect('/admin/users');
     }
   }
 
@@ -273,12 +289,13 @@ class AdminController {
         user: req.user,
         callers: result.callers,
         pagination: result.pagination,
-        filters: options
+        filters: options,
+        path: '/admin/callers'
       });
     } catch (error) {
       logger.error('Error loading callers:', error);
       req.flash('error', 'Failed to load callers');
-      res.redirect('/v1/admin/dashboard');
+      res.redirect('/admin/dashboard');
     }
   }
 
@@ -286,7 +303,8 @@ class AdminController {
   showCreateCaller(req, res) {
     res.render('admin/callers/new', {
       title: 'Create Caller - Call Manager',
-      user: req.user
+      user: req.user,
+      path: '/admin/callers/new'
     });
   }
 
@@ -297,7 +315,7 @@ class AdminController {
       const validation = validateData(callerSchemas.create, req.body);
       if (!validation.success) {
         req.flash('error', validation.errors[0].message);
-        return res.redirect('/v1/admin/callers/new');
+        return res.redirect('/admin/callers/new');
       }
 
       const callerData = validation.data;
@@ -306,13 +324,13 @@ class AdminController {
       const existingCaller = await Caller.findByEmail(callerData.email);
       if (existingCaller) {
         req.flash('error', 'A caller with this email already exists');
-        return res.redirect('/v1/admin/callers/new');
+        return res.redirect('/admin/callers/new');
       }
 
       const existingPhone = await Caller.exists({ phone: callerData.phone });
       if (existingPhone) {
         req.flash('error', 'A caller with this phone number already exists');
-        return res.redirect('/v1/admin/callers/new');
+        return res.redirect('/admin/callers/new');
       }
 
       // Create caller
@@ -321,7 +339,7 @@ class AdminController {
       logger.upload(`New caller created by ${req.user.email}: ${newCaller.email}`);
       req.flash('success', `Caller ${newCaller.name} has been created successfully`);
       
-      res.redirect('/v1/admin/callers');
+      res.redirect('/admin/callers');
     } catch (error) {
       logger.error('Error creating caller:', error);
       
@@ -331,7 +349,7 @@ class AdminController {
         req.flash('error', 'Failed to create caller. Please try again.');
       }
       
-      res.redirect('/v1/admin/callers/new');
+      res.redirect('/admin/callers/new');
     }
   }
 
@@ -339,7 +357,8 @@ class AdminController {
   showUploadCallers(req, res) {
     res.render('admin/callers/upload', {
       title: 'Bulk Upload Callers - Call Manager',
-      user: req.user
+      user: req.user,
+      path: '/admin/callers/upload'
     });
   }
 
@@ -348,7 +367,7 @@ class AdminController {
     try {
       if (!req.file) {
         req.flash('error', 'Please select a CSV file to upload');
-        return res.redirect('/v1/admin/callers/upload');
+        return res.redirect('/admin/callers/upload');
       }
 
       // Validate file using CSV handler
@@ -356,7 +375,7 @@ class AdminController {
       if (!fileValidation.success) {
         req.flash('error', fileValidation.errors[0].message);
         csvHandler.cleanupTempFile(req.file.path);
-        return res.redirect('/v1/admin/callers/upload');
+        return res.redirect('/admin/callers/upload');
       }
 
       // Process CSV file
@@ -364,7 +383,7 @@ class AdminController {
       
       if (!result.success) {
         req.flash('error', `CSV processing failed: ${result.errors.length} errors found`);
-        return res.redirect('/v1/admin/callers/upload');
+        return res.redirect('/admin/callers/upload');
       }
 
       // Create callers from valid data
@@ -379,7 +398,7 @@ class AdminController {
       }
 
       req.flash('success', `Successfully created ${createdCallers.length} callers from CSV`);
-      res.redirect('/v1/admin/callers');
+      res.redirect('/admin/callers');
     } catch (error) {
       logger.error('Error processing CSV upload:', error);
       
@@ -388,7 +407,7 @@ class AdminController {
       }
       
       req.flash('error', 'Failed to process CSV file. Please try again.');
-      res.redirect('/v1/admin/callers/upload');
+      res.redirect('/admin/callers/upload');
     }
   }
 
@@ -399,7 +418,7 @@ class AdminController {
     } catch (error) {
       logger.error('Error generating CSV template:', error);
       req.flash('error', 'Failed to generate template');
-      res.redirect('/v1/admin/callers/upload');
+      res.redirect('/admin/callers/upload');
     }
   }
 
@@ -466,12 +485,13 @@ class AdminController {
       res.render('admin/system', {
         title: 'System Administration - Call Manager',
         user: req.user,
-        systemInfo
+        systemInfo,
+        path: '/admin/system'
       });
     } catch (error) {
       logger.error('Error loading system page:', error);
       req.flash('error', 'Failed to load system information');
-      res.redirect('/v1/admin/dashboard');
+      res.redirect('/admin/dashboard');
     }
   }
 
@@ -490,12 +510,13 @@ class AdminController {
           users: userStats,
           callers: callerStats,
           batches: batchStats
-        }
+        },
+        path: '/admin/reports'
       });
     } catch (error) {
       logger.error('Error loading reports:', error);
       req.flash('error', 'Failed to load reports');
-      res.redirect('/v1/admin/dashboard');
+      res.redirect('/admin/dashboard');
     }
   }
 }
