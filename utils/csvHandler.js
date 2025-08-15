@@ -1,176 +1,94 @@
-// CSV handling utility for the Call Manager application
-// Provides CSV parsing, validation, and generation functionality
+// CSV handler for the Call Manager application
+// Provides CSV template download and validation with configurable file size limit
 
-import fastcsv from 'fast-csv';
 import fs from 'fs';
 import path from 'path';
-import { validateData, sanitizeData } from './validation.js';
-import { callerSchemas } from './validation.js';
+import { fileURLToPath } from 'url';
+import { validateData, uploadSchemas, callerSchemas } from './validation.js';
+import config from '../config/index.js';
 import logger from './logger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class CSVHandler {
   constructor() {
-    this.maxRows = 200;
-    this.requiredColumns = ['name', 'email', 'phone'];
+    this.templatesDir = path.join(__dirname, '../public/templates');
+    this.maxFileSize = config.upload.maxFileSize;
+    this.ensureTemplatesDirectory();
   }
 
-  // Parse CSV file and validate data
-  async parseCSV(filePath) {
-    try {
-      const rows = [];
-      const errors = [];
-      let rowNumber = 0;
-
-      return new Promise((resolve, reject) => {
-        fs.createReadStream(filePath)
-          .pipe(fastcsv.parse({ headers: true, skipRows: 0 }))
-          .on('data', (row) => {
-            rowNumber++;
-            
-            // Check row limit
-            if (rowNumber > this.maxRows) {
-              errors.push({
-                row: rowNumber,
-                field: 'limit',
-                message: `Row exceeds maximum limit of ${this.maxRows} rows`
-              });
-              return;
-            }
-
-            // Validate required columns exist
-            const missingColumns = this.requiredColumns.filter(col => !row.hasOwnProperty(col));
-            if (missingColumns.length > 0) {
-              errors.push({
-                row: rowNumber,
-                field: 'columns',
-                message: `Missing required columns: ${missingColumns.join(', ')}`
-              });
-              return;
-            }
-
-            // Sanitize row data
-            const sanitizedRow = sanitizeData(row);
-
-            // Validate row data against schema
-            const validation = validateData(callerSchemas.csvRow, sanitizedRow);
-            if (!validation.success) {
-              validation.errors.forEach(error => {
-                errors.push({
-                  row: rowNumber,
-                  field: error.field,
-                  message: error.message,
-                  value: row[error.field]
-                });
-              });
-              return;
-            }
-
-            rows.push({
-              rowNumber,
-              data: sanitizedRow
-            });
-          })
-          .on('end', () => {
-            resolve({
-              success: errors.length === 0,
-              rows,
-              errors,
-              totalRows: rowNumber
-            });
-          })
-          .on('error', (error) => {
-            reject(new Error(`CSV parsing error: ${error.message}`));
-          });
-      });
-    } catch (error) {
-      logger.error('Error parsing CSV file:', { filePath, error: error.message });
-      throw error;
+  // Ensure templates directory exists
+  ensureTemplatesDirectory() {
+    if (!fs.existsSync(this.templatesDir)) {
+      fs.mkdirSync(this.templatesDir, { recursive: true });
     }
   }
 
-  // Generate CSV template with headers only
-  generateTemplate() {
+  // Create CSV template file
+  createTemplate() {
     try {
-      const headers = this.requiredColumns;
-      const csvContent = fastcsv.format({ headers });
+      const headers = ['name', 'email', 'phone', 'batch_id'];
+      const csvContent = headers.join(',') + '\n';
       
-      logger.upload('CSV template generated successfully');
-      return csvContent;
-    } catch (error) {
-      logger.error('Error generating CSV template:', error);
-      throw error;
-    }
-  }
-
-  // Generate CSV with invalid rows for download
-  generateErrorCSV(errors) {
-    try {
-      if (!Array.isArray(errors) || errors.length === 0) {
-        throw new Error('No errors provided for error CSV generation');
-      }
-
-      // Add headers for error CSV
-      const headers = ['row', 'field', 'message', 'value'];
-      const csvContent = fastcsv.format({ headers });
+      const templatePath = path.join(this.templatesDir, 'caller_template.csv');
+      fs.writeFileSync(templatePath, csvContent);
       
-      // Add error rows
-      errors.forEach(error => {
-        csvContent.write({
-          row: error.row,
-          field: error.field,
-          message: error.message,
-          value: error.value || ''
-        });
-      });
-
-      csvContent.end();
-      logger.upload(`Error CSV generated with ${errors.length} rows`);
-      return csvContent;
+      logger.info('CSV template created successfully');
+      return templatePath;
     } catch (error) {
-      logger.error('Error generating error CSV:', error);
+      logger.error('Error creating CSV template:', error);
       throw error;
     }
   }
 
-  // Validate CSV file before processing
-  async validateCSVFile(file) {
+  // Get template file path
+  getTemplatePath() {
+    const templatePath = path.join(this.templatesDir, 'caller_template.csv');
+    
+    // Create template if it doesn't exist
+    if (!fs.existsSync(templatePath)) {
+      this.createTemplate();
+    }
+    
+    return templatePath;
+  }
+
+  // Download template
+  downloadTemplate(res) {
     try {
-      // Check file type
-      if (file.mimetype !== 'text/csv' && !file.originalname.endsWith('.csv')) {
-        return {
-          success: false,
-          errors: [{
-            field: 'file',
-            message: 'Only CSV files are allowed'
-          }]
-        };
-      }
+      const templatePath = this.getTemplatePath();
+      const fileName = 'caller_template.csv';
+      
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      
+      const fileStream = fs.createReadStream(templatePath);
+      fileStream.pipe(res);
+      
+      logger.info('CSV template downloaded successfully');
+    } catch (error) {
+      logger.error('Error downloading CSV template:', error);
+      res.status(500).send('Error downloading template');
+    }
+  }
 
-      // Check file size (5MB limit)
-      if (file.size > 5 * 1024 * 1024) {
+  // Validate uploaded CSV file
+  validateCSVFile(file) {
+    try {
+      // Validate file using Zod schema with configurable file size limit
+      const validation = validateData(uploadSchemas.csvUpload, { file });
+      
+      if (!validation.success) {
         return {
           success: false,
-          errors: [{
-            field: 'file',
-            message: 'File size must be less than 5MB'
-          }]
-        };
-      }
-
-      // Check if file exists and is readable
-      if (!fs.existsSync(file.path)) {
-        return {
-          success: false,
-          errors: [{
-            field: 'file',
-            message: 'File not found or not readable'
-          }]
+          errors: validation.errors
         };
       }
 
       return { success: true, errors: [] };
     } catch (error) {
-      logger.error('Error validating CSV file:', { file: file.originalname, error: error.message });
+      logger.error('Error validating CSV file:', error);
       return {
         success: false,
         errors: [{
@@ -181,118 +99,120 @@ class CSVHandler {
     }
   }
 
-  // Process CSV file and return results
-  async processCSV(filePath) {
+  // Parse and validate CSV content
+  async parseCSVContent(filePath) {
     try {
-      // Parse and validate CSV
-      const parseResult = await this.parseCSV(filePath);
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      const lines = fileContent.split('\n').filter(line => line.trim());
       
-      if (!parseResult.success) {
+      if (lines.length < 2) {
         return {
           success: false,
-          validRows: [],
-          invalidRows: parseResult.errors,
-          totalRows: parseResult.totalRows,
-          message: `CSV processing failed with ${parseResult.errors.length} errors`
+          errors: [{ field: 'file', message: 'CSV file must contain headers and at least one data row' }],
+          data: []
         };
       }
 
-      // Check for duplicates within the file
-      const duplicates = this.findDuplicates(parseResult.rows);
-      if (duplicates.length > 0) {
-        duplicates.forEach(duplicate => {
-          parseResult.errors.push({
-            row: duplicate.rowNumber,
-            field: 'duplicate',
-            message: `Duplicate entry found in row ${duplicate.duplicateRowNumber}`,
-            value: `${duplicate.data.email} / ${duplicate.data.phone}`
-          });
-        });
+      const headers = lines[0].split(',').map(h => h.trim());
+      const requiredHeaders = ['name', 'email', 'phone'];
+      
+      // Check if required headers exist
+      const missingHeaders = requiredHeaders.filter(header => !headers.includes(header));
+      if (missingHeaders.length > 0) {
+        return {
+          success: false,
+          errors: [{ field: 'file', message: `Missing required headers: ${missingHeaders.join(', ')}` }],
+          data: []
+        };
       }
 
-      // Separate valid and invalid rows
-      const validRows = parseResult.rows.filter(row => 
-        !parseResult.errors.some(error => error.row === row.rowNumber)
-      );
+      const data = [];
+      const errors = [];
+      
+      // Parse data rows (skip header)
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        
+        const values = line.split(',').map(v => v.trim());
+        const row = {};
+        
+        headers.forEach((header, index) => {
+          row[header] = values[index] || '';
+        });
+        
+        // Validate each row using Zod schema
+        const rowValidation = validateData(callerSchemas.csvRow, row);
+        if (!rowValidation.success) {
+          errors.push({
+            row: i + 1,
+            errors: rowValidation.errors
+          });
+        } else {
+          data.push(rowValidation.data);
+        }
+      }
 
       return {
-        success: parseResult.errors.length === 0,
-        validRows: validRows.map(row => row.data),
-        invalidRows: parseResult.errors,
-        totalRows: parseResult.totalRows,
-        message: parseResult.errors.length === 0 
-          ? `CSV processed successfully: ${validRows.length} valid rows`
-          : `CSV processing completed with ${parseResult.errors.length} errors`
+        success: errors.length === 0,
+        data,
+        errors,
+        totalRows: lines.length - 1
       };
     } catch (error) {
-      logger.error('Error processing CSV file:', { filePath, error: error.message });
-      throw error;
+      logger.error('Error parsing CSV content:', error);
+      return {
+        success: false,
+        errors: [{ field: 'file', message: 'Failed to parse CSV file' }],
+        data: []
+      };
     }
   }
 
-  // Find duplicate entries within CSV data
-  findDuplicates(rows) {
-    const duplicates = [];
-    const seen = new Map();
-
-    rows.forEach(row => {
-      const key = `${row.data.email.toLowerCase()}-${row.data.phone}`;
-      
-      if (seen.has(key)) {
-        duplicates.push({
-          rowNumber: row.rowNumber,
-          duplicateRowNumber: seen.get(key),
-          data: row.data
-        });
-      } else {
-        seen.set(key, row.rowNumber);
+  // Process uploaded CSV file
+  async processCSVUpload(file) {
+    try {
+      // First validate the file
+      const fileValidation = this.validateCSVFile(file);
+      if (!fileValidation.success) {
+        return fileValidation;
       }
-    });
 
-    return duplicates;
+      // Parse and validate CSV content
+      const parseResult = await this.parseCSVContent(file.path);
+      
+      // Clean up temporary file
+      this.cleanupTempFile(file.path);
+      
+      return parseResult;
+    } catch (error) {
+      logger.error('Error processing CSV upload:', error);
+      this.cleanupTempFile(file.path);
+      
+      return {
+        success: false,
+        errors: [{ field: 'file', message: 'Failed to process CSV file' }],
+        data: []
+      };
+    }
   }
 
-  // Clean up temporary files
+  // Clean up temporary file
   cleanupTempFile(filePath) {
     try {
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
-        logger.upload(`Temporary file cleaned up: ${filePath}`);
+        logger.info(`Temporary file cleaned up: ${filePath}`);
       }
     } catch (error) {
       logger.error('Error cleaning up temporary file:', { filePath, error: error.message });
     }
   }
 
-  // Get CSV processing statistics
-  getProcessingStats(validRows, invalidRows, totalRows) {
-    const successRate = totalRows > 0 ? ((validRows.length / totalRows) * 100).toFixed(2) : 0;
-    
-    return {
-      totalRows,
-      validRows: validRows.length,
-      invalidRows: invalidRows.length,
-      successRate: `${successRate}%`,
-      timestamp: new Date().toISOString()
-    };
-  }
-
-  // Export data to CSV
-  exportToCSV(data, headers) {
-    try {
-      const csvContent = fastcsv.format({ headers });
-      
-      data.forEach(row => {
-        csvContent.write(row);
-      });
-
-      csvContent.end();
-      logger.upload(`Data exported to CSV: ${data.length} rows`);
-      return csvContent;
-    } catch (error) {
-      logger.error('Error exporting data to CSV:', error);
-      throw error;
-    }
+  // Get file size limit in human readable format
+  getFileSizeLimit() {
+    const sizeInMB = this.maxFileSize / (1024 * 1024);
+    return `${sizeInMB}MB`;
   }
 }
 

@@ -14,7 +14,6 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -33,7 +32,7 @@ app.use(session({
 }));
 
 app.use((req, res, next) => {
-  res.locals.user = req.session?.user || null; // saved the user session in local variable so that it can be used in the views
+  res.locals.user = req.session?.user || null;
   next();
 });
 
@@ -45,11 +44,12 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(authRoutes);
-app.use(dashboardRoutes);
+// Routes with versioning
+app.use('/v1', authRoutes);
+app.use('/v1', dashboardRoutes);
 
 app.get('/', (req, res) => {
-  res.redirect('/signup');
+  res.redirect('/v1/signup');
 });
 
 app.use((err, req, res, next) => {
@@ -61,16 +61,16 @@ app.use((err, req, res, next) => {
     } else {
       req.flash('error', 'File upload error: ' + err.message);
     }
-    return res.redirect('/signup');
+    return res.redirect('/v1/signup');
   }
 
   if (err.name === 'ValidationError') {
     req.flash('error', 'Validation error: ' + err.message);
-    return res.redirect('/signup');
+    return res.redirect('/v1/signup');
   }
 
   req.flash('error', 'Something went wrong. Please try again.');
-  res.redirect('/signup');
+  res.redirect('/v1/signup');
 });
 
 app.use('/{*any}', (req, res) => {

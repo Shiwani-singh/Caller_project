@@ -23,7 +23,7 @@ const config = {
     version: process.env.APP_VERSION || '1.0.0',
     port: parseInt(process.env.PORT) || 3000,
     environment: process.env.NODE_ENV || 'development',
-    debug: process.env.DEBUG === 'true'
+    debug: process.env.APP_DEBUG === 'true' || process.env.DEBUG === 'true'
   },
 
   // Session configuration
@@ -38,8 +38,9 @@ const config = {
 
   // Logging configuration
   logging: {
-    fileLogging: process.env.FILE_LOGGING === 'true',
-    level: process.env.NODE_ENV === 'production' ? 'warn' : 'debug'
+    fileLogging: process.env.FILE_LOGGER === 'true',
+    level: process.env.NODE_ENV === 'production' ? 'warn' : 'debug',
+    debug: process.env.APP_DEBUG === 'true' || process.env.DEBUG === 'true'
   },
 
   // Security configuration
@@ -52,7 +53,7 @@ const config = {
 
   // File upload configuration
   upload: {
-    maxFileSize: 5 * 1024 * 1024, // 5MB
+    maxFileSize: 1 * 1024 * 1024, // 1MB (updated to match validation)
     allowedMimeTypes: ['text/csv'],
     maxRows: 200
   }

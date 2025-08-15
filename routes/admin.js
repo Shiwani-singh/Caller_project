@@ -56,9 +56,6 @@ router.post('/callers/assign', asyncHandler(adminController.assignCallers.bind(a
 // GET /admin/system - System administration page
 router.get('/system', asyncHandler(adminController.showSystem.bind(adminController)));
 
-// POST /admin/system/cron/trigger - Manually trigger cron jobs
-router.post('/system/cron/trigger', asyncHandler(adminController.triggerCronJob.bind(adminController)));
-
 // GET /admin/reports - Reports and analytics page
 router.get('/reports', asyncHandler(adminController.showReports.bind(adminController)));
 

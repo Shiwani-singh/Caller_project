@@ -1,4 +1,4 @@
-<%- include('../layout', { path: '/admin/dashboard' }) %>
+<%- include('../layout', { path: '/admin/dashboard', body: 'test' }) %>
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">
@@ -173,13 +173,6 @@
                                 <td>MySQL connection established</td>
                                 <td><small class="text-muted">Just now</small></td>
                             </tr>
-                            <tr>
-                                <td>
-                                    <span class="badge bg-warning">Cron</span>
-                                </td>
-                                <td>Automatic assignment jobs initialized</td>
-                                <td><small class="text-muted">Just now</small></td>
-                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -199,16 +192,6 @@
                     <div class="d-flex justify-content-between align-items-center mb-1">
                         <span>Database</span>
                         <span class="badge bg-success">Connected</span>
-                    </div>
-                    <div class="progress" style="height: 6px;">
-                        <div class="progress-bar bg-success" style="width: 100%"></div>
-                    </div>
-                </div>
-                
-                <div class="mb-3">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span>Cron Jobs</span>
-                        <span class="badge bg-success">Running</span>
                     </div>
                     <div class="progress" style="height: 6px;">
                         <div class="progress-bar bg-success" style="width: 100%"></div>

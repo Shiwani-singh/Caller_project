@@ -1,10 +1,9 @@
-// Base database model for the Call Manager application
-// Provides MySQL pool connection, query execution, and transaction handling
+// Simple BaseModel for the Call Manager application
+// Provides basic MySQL connection and query execution
 
 import mysql from 'mysql2/promise';
 import config from '../config/index.js';
 import logger from '../utils/logger.js';
-import AppError from '../utils/AppError.js';
 
 class BaseModel {
   constructor() {
@@ -20,20 +19,17 @@ class BaseModel {
         user: config.database.user,
         password: config.database.password,
         database: config.database.database,
-        connectionLimit: config.database.connectionLimit,
-        acquireTimeout: config.database.acquireTimeout,
-        timeout: config.database.timeout,
-        reconnect: config.database.reconnect,
+        connectionLimit: config.database.connectionLimit || 10,
         waitForConnections: true,
         queueLimit: 0
       });
 
       // Test the connection
       await this.testConnection();
-      logger.database('MySQL connection pool initialized successfully');
+      logger.info('MySQL connection pool initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize MySQL connection pool:', error);
-      throw AppError.databaseError('Database connection failed', error);
+      throw error;
     }
   }
 
@@ -46,11 +42,11 @@ class BaseModel {
       return true;
     } catch (error) {
       logger.error('Database connection test failed:', error);
-      throw AppError.databaseError('Database connection test failed', error);
+      throw error;
     }
   }
 
-  // Execute a single query
+  // Execute a single query with parameters
   async query(sql, params = []) {
     try {
       if (!this.pool) {
@@ -62,28 +58,6 @@ class BaseModel {
       return rows;
     } catch (error) {
       logger.error('Query execution failed:', { sql, params, error: error.message });
-      throw AppError.databaseError('Database query failed', error);
-    }
-  }
-
-  // Execute a query and return the first row
-  async queryOne(sql, params = []) {
-    try {
-      const rows = await this.query(sql, params);
-      return rows.length > 0 ? rows[0] : null;
-    } catch (error) {
-      logger.error('QueryOne execution failed:', { sql, params, error: error.message });
-      throw error;
-    }
-  }
-
-  // Execute a query and return the count
-  async queryCount(sql, params = []) {
-    try {
-      const result = await this.query(sql, params);
-      return result[0]?.count || 0;
-    } catch (error) {
-      logger.error('QueryCount execution failed:', { sql, params, error: error.message });
       throw error;
     }
   }
@@ -121,93 +95,8 @@ class BaseModel {
       }
 
       logger.error('Transaction failed:', { error: error.message, queries: queries.length });
-      throw AppError.databaseError('Database transaction failed', error);
+      throw error;
     }
-  }
-
-  // Escape values to prevent SQL injection
-  escape(value) {
-    if (value === null || value === undefined) {
-      return 'NULL';
-    }
-    
-    if (typeof value === 'string') {
-      return `'${value.replace(/'/g, "''")}'`;
-    }
-    
-    if (typeof value === 'number') {
-      return value.toString();
-    }
-    
-    if (typeof value === 'boolean') {
-      return value ? '1' : '0';
-    }
-    
-    if (value instanceof Date) {
-      return `'${value.toISOString().slice(0, 19).replace('T', ' ')}'`;
-    }
-    
-    if (Array.isArray(value)) {
-      return value.map(v => this.escape(v)).join(', ');
-    }
-    
-    return `'${String(value).replace(/'/g, "''")}'`;
-  }
-
-  // Build WHERE clause from object
-  buildWhereClause(conditions) {
-    if (!conditions || Object.keys(conditions).length === 0) {
-      return { sql: '', params: [] };
-    }
-
-    const clauses = [];
-    const params = [];
-
-    for (const [key, value] of Object.entries(conditions)) {
-      if (value !== null && value !== undefined) {
-        if (Array.isArray(value)) {
-          clauses.push(`${key} IN (${value.map(() => '?').join(', ')})`);
-          params.push(...value);
-        } else if (typeof value === 'object' && value.operator) {
-          clauses.push(`${key} ${value.operator} ?`);
-          params.push(value.value);
-        } else {
-          clauses.push(`${key} = ?`);
-          params.push(value);
-        }
-      }
-    }
-
-    return {
-      sql: clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '',
-      params
-    };
-  }
-
-  // Build ORDER BY clause
-  buildOrderClause(sortBy, sortOrder = 'ASC') {
-    if (!sortBy) {
-      return '';
-    }
-
-    const validColumns = ['id', 'name', 'email', 'phone', 'created_at', 'updated_at', 'assigned_at', 'status'];
-    const validOrders = ['ASC', 'DESC'];
-    
-    if (!validColumns.includes(sortBy)) {
-      sortBy = 'id';
-    }
-    
-    if (!validOrders.includes(sortOrder.toUpperCase())) {
-      sortOrder = 'ASC';
-    }
-
-    return `ORDER BY ${sortBy} ${sortOrder.toUpperCase()}`;
-  }
-
-  // Build LIMIT clause for pagination
-  buildLimitClause(page = 1, limit = 10) {
-    const offset = (page - 1) * limit;
-    return `LIMIT ${limit} OFFSET ${offset}`;
   }
 
   // Close the connection pool
@@ -215,38 +104,12 @@ class BaseModel {
     if (this.pool) {
       try {
         await this.pool.end();
-        logger.database('MySQL connection pool closed successfully');
+        logger.info('MySQL connection pool closed successfully');
       } catch (error) {
         logger.error('Failed to close MySQL connection pool:', error);
       }
     }
   }
-
-  // Get pool status
-  getPoolStatus() {
-    if (!this.pool) {
-      return { status: 'not_initialized' };
-    }
-
-    return {
-      status: 'active',
-      connectionLimit: this.pool.config.connectionLimit,
-      acquireTimeout: this.pool.config.acquireTimeout,
-      timeout: this.pool.config.timeout
-    };
-  }
 }
 
-// Export the class instead of an instance
 export default BaseModel;
-
-// Handle graceful shutdown
-process.on('SIGINT', async () => {
-  logger.info('Received SIGINT, closing database connections...');
-  process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-  logger.info('Received SIGTERM, closing database connections...');
-  process.exit(0);
-});

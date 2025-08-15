@@ -1,4 +1,4 @@
-<%- include('../layout', { path: '/employee/dashboard' }) %>
+<%- include('../layout', { path: '/employee/dashboard', body: 'test' }) %>
 
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2">
@@ -21,7 +21,7 @@
 </div>
 
 <!-- Flash Messages -->
-<% if (flash && flash.error && flash.error.length > 0) { %>
+<% if (locals.flash && flash.error && flash.error.length > 0) { %>
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
         <i class="bi bi-exclamation-triangle-fill me-2"></i>
         <%= flash.error %>
@@ -29,7 +29,7 @@
     </div>
 <% } %>
 
-<% if (flash && flash.success && flash.success.length > 0) { %>
+<% if (locals.flash && flash.success && flash.success.length > 0) { %>
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         <i class="bi bi-check-circle-fill me-2"></i>
         <%= flash.success %>
@@ -44,10 +44,10 @@
             <div class="card-body text-center">
                 <h4 class="card-title">
                     <i class="bi bi-person-circle me-2"></i>
-                    Welcome back, <%= user.name %>!
+                    Welcome back, <%= locals.user && user.name ? user.name : 'Employee' %>!
                 </h4>
                 <p class="card-text text-muted">
-                    You have <strong><%= stats.totalAssigned %></strong> callers assigned to you.
+                    You have <strong><%= locals.stats && stats.totalAssigned ? stats.totalAssigned : 0 %></strong> callers assigned to you.
                     Keep up the great work!
                 </p>
             </div>
@@ -60,7 +60,7 @@
     <div class="col-xl-4 col-md-6 mb-4">
         <div class="card stats-card h-100">
             <div class="card-body text-center">
-                <div class="stats-number"><%= stats.totalAssigned %></div>
+                <div class="stats-number"><%= locals.stats && stats.totalAssigned ? stats.totalAssigned : 0 %></div>
                 <div class="stats-label">Total Assigned</div>
                 <div class="mt-2">
                     <small class="opacity-75">
@@ -74,7 +74,7 @@
     <div class="col-xl-4 col-md-6 mb-4">
         <div class="card stats-card h-100">
             <div class="card-body text-center">
-                <div class="stats-number"><%= stats.activeCallers %></div>
+                <div class="stats-number"><%= locals.stats && stats.activeCallers ? stats.activeCallers : 0 %></div>
                 <div class="stats-label">Active Callers</div>
                 <div class="mt-2">
                     <small class="opacity-75">
@@ -88,7 +88,7 @@
     <div class="col-xl-4 col-md-6 mb-4">
         <div class="card stats-card h-100">
             <div class="card-body text-center">
-                <div class="stats-number"><%= stats.completedCallers %></div>
+                <div class="stats-number"><%= locals.stats && stats.completedCallers ? stats.completedCallers : 0 %></div>
                 <div class="stats-label">Completed</div>
                 <div class="mt-2">
                     <small class="opacity-75">
@@ -113,7 +113,7 @@
                 </a>
             </div>
             <div class="card-body">
-                <% if (callers && callers.length > 0) { %>
+                <% if (locals.callers && callers && callers.length > 0) { %>
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
@@ -130,21 +130,21 @@
                                 <% callers.slice(0, 10).forEach(caller => { %>
                                 <tr data-caller-id="<%= caller.id %>">
                                     <td>
-                                        <strong><%= caller.name %></strong>
+                                        <strong><%= caller.name || 'N/A' %></strong>
                                     </td>
                                     <td>
-                                        <a href="mailto:<%= caller.email %>" class="text-decoration-none">
-                                            <%= caller.email %>
+                                        <a href="mailto:<%= caller.email || '#' %>" class="text-decoration-none">
+                                            <%= caller.email || 'N/A' %>
                                         </a>
                                     </td>
                                     <td>
-                                        <a href="tel:<%= caller.phone %>" class="text-decoration-none">
-                                            <%= caller.phone %>
+                                        <a href="tel:<%= caller.phone || '#' %>" class="text-decoration-none">
+                                            <%= caller.phone || 'N/A' %>
                                         </a>
                                     </td>
                                     <td>
                                         <small class="text-muted">
-                                            <%= new Date(caller.assigned_at).toLocaleDateString() %>
+                                            <%= caller.assigned_at ? new Date(caller.assigned_at).toLocaleDateString() : 'N/A' %>
                                         </small>
                                     </td>
                                     <td>
@@ -260,7 +260,7 @@
                         </div>
                     </div>
                     
-                    <% if (callers && callers.length > 0) { %>
+                    <% if (locals.callers && callers && callers.length > 0) { %>
                     <div class="timeline-item">
                         <div class="timeline-marker bg-info"></div>
                         <div class="timeline-content">

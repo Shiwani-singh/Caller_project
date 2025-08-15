@@ -206,9 +206,9 @@ const requireActiveUser = async (req, res, next) => {
     // Check if user account is still active
     const currentUser = await User.findById(req.user.id);
     if (!currentUser) {
-      logger.auth('User account not found, destroying session');
-      req.session.destroy();
-      return res.redirect('/auth/login');
+              logger.auth('User account not found, destroying session');
+        req.session.destroy();
+        return res.redirect('/auth/login');
     }
 
     // Update user info in request
@@ -236,9 +236,6 @@ const redirectByRole = (req, res, next) => {
         break;
       case 'employee':
         redirectPath = '/employee/dashboard';
-        break;
-      case 'caller':
-        redirectPath = '/caller/dashboard';
         break;
       default:
         redirectPath = '/dashboard';

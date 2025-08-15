@@ -61,7 +61,8 @@ class User extends BaseModel {
         WHERE u.id = ?
       `;
       
-      const user = await this.queryOne(sql, [id]);
+      const users = await this.query(sql, [id]);
+      const user = users[0];
       
       if (!user) {
         throw AppError.notFoundError('User not found');
@@ -85,8 +86,10 @@ class User extends BaseModel {
         WHERE u.email = ?
       `;
       
-      return await this.queryOne(sql, [email]);
+      const users = await this.query(sql, [email]);
+      return users[0];
     } catch (error) {
+      logger.info(email);
       logger.error('Error finding user by email:', { email, error: error.message });
       throw error;
     }
@@ -103,7 +106,8 @@ class User extends BaseModel {
         WHERE u.phone = ?
       `;
       
-      return await this.queryOne(sql, [phone]);
+      const users = await this.query(sql, [phone]);
+      return users[0];
     } catch (error) {
       logger.error('Error finding user by phone:', { phone, error: error.message });
       throw error;
@@ -162,7 +166,8 @@ class User extends BaseModel {
         ${whereClause}
       `;
       
-      const totalCount = await this.queryCount(countSql, params);
+      const countResult = await this.query(countSql, params);
+      const totalCount = countResult[0].count;
 
       // Get paginated results
       const sql = `
@@ -304,11 +309,24 @@ class User extends BaseModel {
   // Check if user exists
   async exists(conditions) {
     try {
-      const { sql, params } = this.buildWhereClause(conditions);
-      const fullSql = `SELECT COUNT(*) as count FROM ${this.tableName} ${sql}`;
+      let whereClause = '';
+      let params = [];
       
-      const result = await this.queryCount(fullSql, params);
-      return result > 0;
+      if (conditions.email) {
+        whereClause = 'WHERE email = ?';
+        params = [conditions.email];
+      } else if (conditions.phone) {
+        whereClause = 'WHERE phone = ?';
+        params = [conditions.phone];
+      } else if (conditions.id) {
+        whereClause = 'WHERE id = ?';
+        params = [conditions.id];
+      }
+      
+      const fullSql = `SELECT COUNT(*) as count FROM ${this.tableName} ${whereClause}`;
+      
+      const result = await this.query(fullSql, params);
+      return result[0].count > 0;
     } catch (error) {
       logger.error('Error checking if user exists:', { conditions, error: error.message });
       throw error;
@@ -327,11 +345,23 @@ class User extends BaseModel {
         FROM ${this.tableName}
       `;
       
-      return await this.queryOne(sql);
+      const results = await this.query(sql);
+      return results[0];
     } catch (error) {
       logger.error('Error getting user statistics:', error);
       throw error;
     }
+  }
+
+  // Static methods for database connection management
+  static async testConnection() {
+    const userModel = new User();
+    return await userModel.testConnection();
+  }
+
+  static async closePool() {
+    const userModel = new User();
+    return await userModel.closePool();
   }
 }
 

@@ -2,11 +2,9 @@
 // Handles employee functionality including viewing assigned callers and marking them as called
 
 import Caller from '../models/Caller.js';
-import { validateData } from '../utils/validation.js';
-import { assignmentSchemas } from '../utils/validation.js';
 import logger from '../utils/logger.js';
 import AppError from '../utils/AppError.js';
-import fastcsv from 'fast-csv';
+import { validateData, assignmentSchemas } from '../utils/validation.js';
 
 class EmployeeController {
   // Show employee dashboard
@@ -15,23 +13,33 @@ class EmployeeController {
       // Get callers assigned to this employee
       const assignedCallers = await Caller.getAssignedToEmployee(req.user.id);
       
-      // Get employee statistics
+      // Get employee statistics with safe defaults
       const stats = {
-        totalAssigned: assignedCallers.length,
-        activeCallers: assignedCallers.filter(c => c.status === 'active').length,
-        completedCallers: assignedCallers.filter(c => c.status === 'inactive').length
+        totalAssigned: assignedCallers ? assignedCallers.length : 0,
+        activeCallers: assignedCallers ? assignedCallers.filter(c => c.status === 'active').length : 0,
+        completedCallers: assignedCallers ? assignedCallers.filter(c => c.status === 'inactive').length : 0
       };
       
       res.render('employee/dashboard', {
         title: 'Employee Dashboard - Call Manager',
-        user: req.user,
-        callers: assignedCallers,
-        stats
+        user: req.user || {},
+        callers: assignedCallers || [],
+        stats: stats
       });
     } catch (error) {
       logger.error('Error loading employee dashboard:', error);
-      req.flash('error', 'Failed to load dashboard');
-      res.redirect('/dashboard');
+      
+      // Render dashboard with safe defaults instead of redirecting
+      res.render('employee/dashboard', {
+        title: 'Employee Dashboard - Call Manager',
+        user: req.user || {},
+        callers: [],
+        stats: {
+          totalAssigned: 0,
+          activeCallers: 0,
+          completedCallers: 0
+        }
+      });
     }
   }
 
@@ -54,8 +62,8 @@ class EmployeeController {
       res.render('employee/callers', {
         title: 'My Assigned Callers - Call Manager',
         user: req.user,
-        callers: result.callers,
-        pagination: result.pagination,
+        callers: result.callers || [],
+        pagination: result.pagination || {},
         filters: options
       });
     } catch (error) {
@@ -226,25 +234,27 @@ class EmployeeController {
       // Get callers assigned to this employee
       const assignedCallers = await Caller.getAssignedToEmployee(req.user.id);
       
-      // Calculate statistics
+      // Calculate statistics with safe defaults
       const stats = {
-        totalAssigned: assignedCallers.length,
-        activeCallers: assignedCallers.filter(c => c.status === 'active').length,
-        completedCallers: assignedCallers.filter(c => c.status === 'inactive').length,
-        completionRate: assignedCallers.length > 0 
+        totalAssigned: assignedCallers ? assignedCallers.length : 0,
+        activeCallers: assignedCallers ? assignedCallers.filter(c => c.status === 'active').length : 0,
+        completedCallers: assignedCallers ? assignedCallers.filter(c => c.status === 'inactive').length : 0,
+        completionRate: assignedCallers && assignedCallers.length > 0 
           ? ((assignedCallers.filter(c => c.status === 'inactive').length / assignedCallers.length) * 100).toFixed(2)
           : 0
       };
       
       // Group callers by batch
       const callersByBatch = {};
-      assignedCallers.forEach(caller => {
-        const batch = caller.batch_id || 'No Batch';
-        if (!callersByBatch[batch]) {
-          callersByBatch[batch] = [];
-        }
-        callersByBatch[batch].push(caller);
-      });
+      if (assignedCallers) {
+        assignedCallers.forEach(caller => {
+          const batch = caller.batch_id || 'No Batch';
+          if (!callersByBatch[batch]) {
+            callersByBatch[batch] = [];
+          }
+          callersByBatch[batch].push(caller);
+        });
+      }
       
       res.render('employee/reports', {
         title: 'My Reports - Call Manager',
@@ -266,13 +276,13 @@ class EmployeeController {
       const assignedCallers = await Caller.getAssignedToEmployee(req.user.id);
       
       // Prepare CSV data
-      const csvData = assignedCallers.map(caller => ({
-        name: caller.name,
-        email: caller.email,
-        phone: caller.phone,
-        status: caller.status,
-        assigned_at: caller.assigned_at,
-        batch_id: caller.batch_id || 'No Batch'
+      const csvData = (assignedCallers || []).map(caller => ({
+        id: caller.id,
+        name: caller.name || 'N/A',
+        email: caller.email || 'N/A',
+        phone: caller.phone || 'N/A',
+        status: caller.status || 'N/A',
+        assigned_at: caller.assigned_at
       }));
       
       // Set response headers for CSV download
@@ -280,12 +290,23 @@ class EmployeeController {
       res.setHeader('Content-Disposition', `attachment; filename="my-callers-${Date.now()}.csv"`);
       
       // Generate CSV content
-      const csvContent = fastcsv.format({ headers: true });
-      csvContent.pipe(res);
+      const headers = ['ID', 'Name', 'Email', 'Phone', 'Status', 'Assigned Date'];
+      const csvContent = [headers.join(',')];
       
-      // Write data to CSV
-      csvData.forEach(row => csvContent.write(row));
-      csvContent.end();
+      // Add data rows
+      csvData.forEach(row => {
+        csvContent.push([
+          row.id,
+          `"${row.name}"`,
+          `"${row.email}"`,
+          `"${row.phone}"`,
+          row.status,
+          row.assigned_at ? new Date(row.assigned_at).toISOString() : ''
+        ].join(','));
+      });
+      
+      // Send CSV content
+      res.send(csvContent.join('\n'));
       
       logger.upload(`Callers exported by employee ${req.user.email}: ${csvData.length} records`);
     } catch (error) {

@@ -3,17 +3,17 @@
 
 import express from 'express';
 import session from 'express-session';
+import MySQLStore from 'express-mysql-session';
 import flash from 'connect-flash';
 import helmet from 'helmet';
 import csrf from 'csurf';
-import rateLimit from 'express-rate-limit';
+// import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import config from './config/index.js';
 import logger from './utils/logger.js';
-import cronManager from './utils/cronJobs.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
-import { sessionConfig, authRateLimit } from './middlewares/auth.js';
+import { sessionConfig } from './middlewares/auth.js';
 
 // Import routes
 import authRoutes from './routes/auth.js';
@@ -26,14 +26,13 @@ import User from './models/User.js';
 // Create Express app
 const app = express();
 
-// Trust proxy for rate limiting
-app.set('trust proxy', 1);
+// Trust proxy for rate limiting - DISABLED
+// app.set('trust proxy', 1);
 
 // View engine setup
 app.set('view engine', 'ejs');
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 
 // Security middleware
 app.use(helmet({
@@ -56,8 +55,30 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Static files
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
-// Session middleware
-app.use(session(sessionConfig));
+// MySQL Session Store configuration
+const MySQLSessionStore = MySQLStore(session);
+const sessionStore = new MySQLSessionStore({
+  host: config.database.host,
+  port: config.database.port,
+  user: config.database.user,
+  password: config.database.password,
+  database: config.database.database,
+  createDatabaseTable: true,
+  schema: {
+    tableName: 'sessions',
+    columnNames: {
+      session_id: 'session_id',
+      expires: 'expires',
+      data: 'data'
+    }
+  }
+});
+
+// Session middleware with MySQL store
+app.use(session({
+  ...sessionConfig,
+  store: sessionStore
+}));
 
 // Flash messages
 app.use(flash());
@@ -65,10 +86,10 @@ app.use(flash());
 // CSRF protection
 app.use(csrf({ cookie: false }));
 
-// Rate limiting for authentication routes
-const loginLimiter = rateLimit(authRateLimit);
-app.use('/auth/login', loginLimiter);
-app.use('/auth/forgot-password', loginLimiter);
+// Rate limiting for authentication routes - DISABLED for testing
+// const loginLimiter = rateLimit(authRateLimit);
+// app.use('/auth/login', loginLimiter);
+// app.use('/auth/forgot-password', loginLimiter);
 
 // Global middleware for CSRF token
 app.use((req, res, next) => {
@@ -80,9 +101,9 @@ app.use((req, res, next) => {
 });
 
 // Request logging middleware
-app.use(logger.logRequest);
+app.use(logger.logRequest.bind(logger));
 
-// Routes
+// Routes without versioning
 app.use('/auth', authRoutes);
 app.use('/admin', adminRoutes);
 app.use('/employee', employeeRoutes);
@@ -95,7 +116,7 @@ app.get('/health', (req, res) => {
     version: config.app.version,
     environment: config.app.environment,
     timestamp: new Date().toISOString(),
-    dbStatus: 'connected' // This would be checked dynamically in production
+    dbStatus: 'connected'
   });
 });
 
@@ -110,9 +131,6 @@ app.get('/', (req, res) => {
         break;
       case 'employee':
         res.redirect('/employee/dashboard');
-        break;
-      case 'caller':
-        res.redirect('/caller/dashboard');
         break;
       default:
         res.redirect('/auth/login');
@@ -133,9 +151,6 @@ app.get('/dashboard', (req, res) => {
         break;
       case 'employee':
         res.redirect('/employee/dashboard');
-        break;
-      case 'caller':
-        res.redirect('/caller/dashboard');
         break;
       default:
         res.redirect('/auth/login');
@@ -167,7 +182,7 @@ async function testDatabaseConnection() {
 async function startApplication() {
   try {
     // Log startup information
-    logger.logStartup();
+    logger.info('Starting Call Manager application...');
     
     // Test database connection
     const dbConnected = await testDatabaseConnection();
@@ -175,10 +190,6 @@ async function startApplication() {
       logger.error('Cannot start application without database connection');
       process.exit(1);
     }
-    
-    // Initialize cron jobs
-    await cronManager.init();
-    logger.success('Cron jobs initialized');
     
     // Start server
     const server = app.listen(config.app.port, () => {
@@ -199,10 +210,6 @@ async function startApplication() {
       server.close(() => {
         logger.info('HTTP server closed');
         
-        // Stop cron jobs
-        cronManager.stopAllJobs();
-        logger.info('Cron jobs stopped');
-        
         // Close database connections
         User.closePool();
         logger.info('Database connections closed');
@@ -219,19 +226,8 @@ async function startApplication() {
     };
     
     // Handle shutdown signals
-    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-    
-    // Handle uncaught errors
-    process.on('uncaughtException', (error) => {
-      logger.error('Uncaught Exception:', error);
-      process.exit(1);
-    });
-    
-    process.on('unhandledRejection', (reason, promise) => {
-      logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-      process.exit(1);
-    });
+    process.on('SIGTERM', gracefulShutdown);
+    process.on('SIGINT', gracefulShutdown);
     
   } catch (error) {
     logger.error('Failed to start application:', error);
@@ -243,6 +239,5 @@ async function startApplication() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   startApplication();
 }
-
 
 export default app;

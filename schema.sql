@@ -1,5 +1,5 @@
 -- Call Manager Database Schema
--- This file contains the complete database structure for the call management system
+-- Simple database structure for the call management system
 
 -- Create database if it doesn't exist
 CREATE DATABASE IF NOT EXISTS call_assignment;

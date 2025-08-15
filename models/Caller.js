@@ -269,7 +269,7 @@ class Caller extends BaseModel {
       
       await this.query(logSql, [callerId, employeeId, assignedBy, method]);
 
-      logger.cron(`Caller ${callerId} assigned to employee ${employeeId} via ${method}`);
+      logger.info(`Caller ${callerId} assigned to employee ${employeeId} via ${method}`);
       
       return await this.findById(callerId);
     } catch (error) {
@@ -379,7 +379,7 @@ class Caller extends BaseModel {
         FROM ${this.tableName}
       `;
       
-      return await this.queryOne(sql);
+      await this.query(sql);
     } catch (error) {
       logger.error('Error getting caller statistics:', error);
       throw error;

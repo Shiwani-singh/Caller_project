@@ -1,218 +1,129 @@
-// Winston-based logger for the Call Manager application
-// Provides color-coded logging, file logging, and uncaught error handling
+// Simple logger for the Call Manager application
+// Provides basic logging functionality without complex dependencies
 
-import winston from 'winston';
-import chalk from 'chalk';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
+import chalk from 'chalk';
+import { createWriteStream } from 'fs';
 import { fileURLToPath } from 'url';
 import config from '../config/index.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure logs directory exists
-const logsDir = path.join(__dirname, '../logs');
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
-}
-
-// Custom format for console output with colors
-const consoleFormat = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  winston.format.errors({ stack: true }),
-  winston.format.printf(({ timestamp, level, message, stack, ...meta }) => {
-    let colorizedLevel;
-    let colorizedMessage = message;
-    
-    // Color-code different log levels
-    switch (level) {
-      case 'error':
-        colorizedLevel = chalk.red(level.toUpperCase());
-        colorizedMessage = chalk.red(message);
-        break;
-      case 'warn':
-        colorizedLevel = chalk.yellow(level.toUpperCase());
-        colorizedMessage = chalk.yellow(message);
-        break;
-      case 'info':
-        colorizedLevel = chalk.blue(level.toUpperCase());
-        colorizedMessage = chalk.blue(message);
-        break;
-      case 'debug':
-        colorizedLevel = chalk.gray(level.toUpperCase());
-        colorizedMessage = chalk.gray(message);
-        break;
-      default:
-        colorizedLevel = chalk.white(level.toUpperCase());
-    }
-    
-    let output = `${chalk.gray(timestamp)} ${colorizedLevel}: ${colorizedMessage}`;
-    
-    // Add stack trace for errors in development
-    if (stack && (config.app.environment === 'development' || config.app.debug)) {
-      output += `\n${chalk.red(stack)}`;
-    }
-    
-    // Add meta information if present
-    if (Object.keys(meta).length > 0) {
-      output += `\n${chalk.gray(JSON.stringify(meta, null, 2))}`;
-    }
-    
-    return output;
-  })
-);
-
-// File format (no colors, structured)
-const fileFormat = winston.format.combine(
-  winston.format.timestamp(),
-  winston.format.errors({ stack: true }),
-  winston.format.json()
-);
-
-// Create logger instance
-const logger = winston.createLogger({
-  level: config.logging.level,
-  format: fileFormat,
-  transports: [
-    // Always log to console
-    new winston.transports.Console({
-      format: consoleFormat,
-      level: config.app.debug ? 'debug' : config.logging.level
-    })
-  ]
-});
-
-// Add file transport if enabled
-if (config.logging.fileLogging) {
-  logger.add(new winston.transports.File({
-    filename: path.join(logsDir, 'app.log'),
-    format: fileFormat,
-    maxsize: 10 * 1024 * 1024, // 10MB
-    maxFiles: 5,
-    tailable: true
-  }));
-}
-
-// Special transport for uncaught errors
-const uncaughtLogger = winston.createLogger({
-  level: 'error',
-  format: fileFormat,
-  transports: [
-    new winston.transports.File({
-      filename: path.join(logsDir, 'uncaught.log'),
-      format: fileFormat
-    })
-  ]
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  uncaughtLogger.error('Uncaught Exception:', {
-    error: error.message,
-    stack: error.stack,
-    timestamp: new Date().toISOString()
-  });
-  
-  console.error(chalk.red('Uncaught Exception:'), error);
-  process.exit(1);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  uncaughtLogger.error('Unhandled Rejection:', {
-    reason: reason?.message || reason,
-    stack: reason?.stack,
-    promise: promise,
-    timestamp: new Date().toISOString()
-  });
-  
-  console.error(chalk.red('Unhandled Rejection:'), reason);
-  process.exit(1);
-});
-
-// Helper methods for common logging patterns
-logger.startup = (message, ...meta) => {
-  logger.info(`🚀 ${message}`, ...meta);
-};
-
-logger.success = (message, ...meta) => {
-  logger.info(`✅ ${message}`, ...meta);
-};
-
-logger.warning = (message, ...meta) => {
-  logger.warn(`⚠️  ${message}`, ...meta);
-};
-
-logger.errorLog = (message, ...meta) => {
-  logger.error(`❌ ${message}`, ...meta);
-};
-
-logger.debug = (message, ...meta) => {
-  if (config.app.debug || config.app.environment === 'development') {
-    logger.debug(`🔍 ${message}`, ...meta);
+class Logging {
+  constructor() {
+    this.showLogs = config.logging.debug;
+    this.logDirectory = path.resolve(__dirname, '../logs');
+    this.ensureLogDirectoryExists();
+    this.logStream = this.getLogStream();
   }
-};
 
-logger.database = (message, ...meta) => {
-  logger.info(`🗄️  ${message}`, ...meta);
-};
-
-logger.auth = (message, ...meta) => {
-  logger.info(`🔐 ${message}`, ...meta);
-};
-
-logger.upload = (message, ...meta) => {
-  logger.info(`📁 ${message}`, ...meta);
-};
-
-logger.cron = (message, ...meta) => {
-  logger.info(`⏰ ${message}`, ...meta);
-};
-
-// Method to log application startup information
-logger.logStartup = () => {
-  logger.startup(`${config.app.name} v${config.app.version} [${config.app.environment}]`);
-  logger.debug(`Debug mode: ${config.app.debug ? 'enabled' : 'disabled'}`);
-  logger.debug(`File logging: ${config.logging.fileLogging ? 'enabled' : 'disabled'}`);
-  logger.debug(`Log level: ${config.logging.level}`);
-  
-  if (config.app.environment === 'production' && config.app.debug) {
-    logger.warning('Debug mode is enabled in production environment');
+  // Ensure log directory exists
+  ensureLogDirectoryExists() {
+    if (!fs.existsSync(this.logDirectory)) {
+      fs.mkdirSync(this.logDirectory, { recursive: true });
+    }
   }
-};
 
-// Method to log database connection status
-logger.logDatabaseStatus = (status, details = {}) => {
-  if (status === 'connected') {
-    logger.success('Database connected', details);
-  } else if (status === 'failed') {
-    logger.error('Database connection failed', details);
-  } else {
-    logger.info(`Database status: ${status}`, details);
+  // Get log stream
+  getLogStream() {
+    const logFilePath = path.join(this.logDirectory, 'app.log');
+    return createWriteStream(logFilePath, { flags: 'a' });
   }
-};
 
-// Method to log request information
-logger.logRequest = (req, res, next) => {
-  const start = Date.now();
-  
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    const logLevel = res.statusCode >= 400 ? 'warn' : 'info';
-    const emoji = res.statusCode >= 400 ? '⚠️' : '📝';
+  // Write logs to file
+  writeLog(level, message) {
+    if (config.logging.fileLogging) {
+      const logEntry = `[${new Date().toISOString()}] [${level}] ${typeof message === 'string' ? message : JSON.stringify(message)}\n`;
+      this.logStream.write(logEntry);
+    }
+  }
+
+  // Log methods with different levels
+  info(...args) {
+    this.writeLog('INFO', args);
+    if (this.showLogs) {
+      console.log(
+        chalk.blue(`[${new Date().toLocaleString()}][Info]:`),
+        typeof args === 'string' ? chalk.blueBright(args) : args
+      );
+    }
+  }
+
+  warn(...args) {
+    this.writeLog('WARN', args);
+    if (this.showLogs) {
+      console.log(
+        chalk.white.bgYellowBright(`[${new Date().toLocaleString()}][Warn]:`),
+        typeof args === 'string' ? chalk.yellowBright(args) : args
+      );
+    }
+  }
+
+  error(...args) {
+    this.writeLog('ERROR', args);
+    console.log(args);
+    console.log(
+      chalk.white.bgRedBright(`[${new Date().toLocaleString()}][Error]:`),
+      typeof args === 'string' ? chalk.redBright(args) : args
+    );
+  }
+
+  log(...args) {
+    this.writeLog('LOG', args);
+    if (this.showLogs) {
+      console.log(
+        chalk.white.bgGreenBright(`[${new Date().toLocaleString()}][Log]:`),
+        typeof args === 'string' ? chalk.greenBright(args) : args
+      );
+    }
+  }
+
+  success(...args) {
+    this.writeLog('SUCCESS', args);
+    if (this.showLogs) {
+      console.log(
+        chalk.white.bgGreenBright(`[${new Date().toLocaleString()}][Success]:`),
+        typeof args === 'string' ? chalk.greenBright(args) : args
+      );
+    }
+  }
+
+  auth(...args) {
+    this.writeLog('AUTH', args);
+    if (this.showLogs) {
+      console.log(
+        chalk.magenta(`[${new Date().toLocaleString()}][Auth]:`),
+        typeof args === 'string' ? chalk.magentaBright(args) : args
+      );
+    }
+  }
+
+  debug(...args) {
+    if (this.showLogs) {
+      this.writeLog('DEBUG', args);
+      console.log(
+        chalk.gray(`[${new Date().toLocaleString()}][Debug]:`),
+        typeof args === 'string' ? chalk.gray(args) : args
+      );
+    }
+  }
+
+  // Request logging middleware
+  logRequest(req, res, next) {
+    const start = Date.now();
     
-    logger[logLevel](`${emoji} ${req.method} ${req.originalUrl} - ${res.statusCode} (${duration}ms)`, {
-      method: req.method,
-      url: req.originalUrl,
-      statusCode: res.statusCode,
-      duration: `${duration}ms`,
-      userAgent: req.get('User-Agent'),
-      ip: req.ip
+    res.on('finish', () => {
+      const duration = Date.now() - start;
+      const logLevel = res.statusCode >= 400 ? 'warn' : 'info';
+      
+      this[logLevel](`${req.method} ${req.originalUrl} - ${res.statusCode} (${duration}ms)`);
     });
-  });
-  
-  next();
-};
+    
+    next();
+  }
+}
 
-export default logger;
+// Export a singleton instance
+export default new Logging();
