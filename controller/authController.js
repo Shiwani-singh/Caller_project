@@ -1,11 +1,11 @@
 // Authentication controller for the Call Manager application
 // Handles user login, logout, and authentication-related functionality
 
-import bcrypt from 'bcrypt';
+// import bcrypt from 'bcrypt';
 import User from '../models/User.js';
 import { validateData, sanitizeData, userSchemas } from '../utils/validation.js';
 import logger from '../utils/logger.js';
-import AppError from '../utils/AppError.js';
+// import AppError from '../utils/AppError.js';
 
 class AuthController {
   // Show login page
@@ -77,6 +77,7 @@ class AuthController {
     try {
       if (req.session) {
         const userId = req.session.userId;
+        req.flash('success', 'You have been logged out successfully');
         req.session.destroy((err) => {
           if (err) {
             logger.error('Error destroying session:', err);
@@ -85,7 +86,6 @@ class AuthController {
           }
           logger.auth(`User logged out successfully: ID ${userId}`);
           res.clearCookie('callmanager.sid');
-          req.flash('success', 'You have been logged out successfully');
           res.redirect('/auth/login');
         });
       } else {
@@ -96,7 +96,7 @@ class AuthController {
       }
     } catch (error) {
       logger.error('Logout error:', error);
-      req.flash('error', 'Logout failed');
+      // req.flash('error', 'Logout failed');
       res.redirect('/dashboard');
     }
   }

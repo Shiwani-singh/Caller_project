@@ -14,6 +14,7 @@ class BaseModel {
   // Initialize MySQL connection pool
   async initPool() {
     try {
+      console.log('🔎 DB CONFIG BEING USED:', config.database);
       this.pool = mysql.createPool({
         host: config.database.host,
         user: config.database.user,

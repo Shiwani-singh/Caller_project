@@ -6,7 +6,8 @@ import path from 'path';
 import fs from 'fs';
 import User from '../models/User.js';
 import Caller from '../models/Caller.js';
-import { validateData, sanitizeData, callerSchemas, assignmentSchemas, uploadSchemas } from '../utils/validation.js';
+// import {userSchemas} from '../utils/validation.js';
+import { validateData, userSchemas, sanitizeData, callerSchemas, assignmentSchemas, uploadSchemas } from '../utils/validation.js';
 import csvHandler from '../utils/csvHandler.js';
 import logger from '../utils/logger.js';
 import AppError from '../utils/AppError.js';
@@ -123,16 +124,20 @@ class AdminController {
     res.render('admin/users/new', {
       title: 'Create User - Call Manager',
       user: req.user,
-      path: '/admin/users/new'
+      path: '/admin/users/new',
+      flash: req.flash()
     });
   }
 
   // Create new user
   async createUser(req, res) {
     try {
+      // console.log('createUser called', req.body);
+      if (req.body.role_id) req.body.role_id = Number(req.body.role_id)
       // Validate input
       const validation = validateData(userSchemas.create, req.body);
       if (!validation.success) {
+        console.log('❌ validation failed', validation.errors);
         req.flash('error', validation.errors[0].message);
         return res.redirect('/admin/users/new');
       }
@@ -142,16 +147,19 @@ class AdminController {
       // Check if user already exists
       const existingUser = await User.findByEmail(userData.email);
       if (existingUser) {
+        console.log('❌ email already exists');
         req.flash('error', 'A user with this email already exists');
         return res.redirect('/admin/users/new');
       }
 
       const existingPhone = await User.findByPhone(userData.phone);
       if (existingPhone) {
+        console.log('❌ phone already exists');
         req.flash('error', 'A user with this phone number already exists');
         return res.redirect('/admin/users/new');
       }
 
+      console.log('✅ Final userData to insert:', userData);
       // Create user
       const newUser = await User.create(userData);
       
@@ -304,7 +312,8 @@ class AdminController {
     res.render('admin/callers/new', {
       title: 'Create Caller - Call Manager',
       user: req.user,
-      path: '/admin/callers/new'
+      path: '/admin/callers/new',
+      flash: req.flash()
     });
   }
 
@@ -321,7 +330,7 @@ class AdminController {
       const callerData = validation.data;
 
       // Check if caller already exists
-      const existingCaller = await Caller.findByEmail(callerData.email);
+      const existingCaller = await Caller.exists({ email: callerData.email });
       if (existingCaller) {
         req.flash('error', 'A caller with this email already exists');
         return res.redirect('/admin/callers/new');
@@ -355,16 +364,23 @@ class AdminController {
 
   // Show CSV upload form
   showUploadCallers(req, res) {
+    console.log('Token value:', req.csrfToken());
+
+    const callers =[];
     res.render('admin/callers/upload', {
       title: 'Bulk Upload Callers - Call Manager',
+      callers,
       user: req.user,
-      path: '/admin/callers/upload'
+      path: '/admin/callers/upload',
+      csrfToken: req.csrfToken() 
     });
   }
 
   // Handle CSV upload
   async handleCSVUpload(req, res) {
     try {
+      console.log('BODY:', req.body);
+      console.log('FILE:', req.file);
       if (!req.file) {
         req.flash('error', 'Please select a CSV file to upload');
         return res.redirect('/admin/callers/upload');

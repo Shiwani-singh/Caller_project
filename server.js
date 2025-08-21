@@ -23,6 +23,7 @@ import employeeRoutes from './routes/employee.js';
 
 // Import User model for database operations
 import User from './models/User.js';
+import { start } from 'repl';
 
 // Create Express app
 const app = express();
@@ -83,11 +84,15 @@ app.use(session({
   store: sessionStore
 }));
 
+const csrfProtection = csrf();
+
 // Flash messages
 app.use(flash());
 
+app.use(csrfProtection);
+
 // CSRF protection
-app.use(csrf({ cookie: false }));
+// app.use(csrf({ cookie: false }));
 
 // Rate limiting for authentication routes - DISABLED for testing
 // const loginLimiter = rateLimit(authRateLimit);
@@ -96,12 +101,15 @@ app.use(csrf({ cookie: false }));
 
 // Global middleware for CSRF token
 app.use((req, res, next) => {
-  res.locals.csrfToken = req.csrfToken();
+  const token= req.csrfToken()
+  res.locals.csrfToken = token;
+  console.log("csrf token in server.js", token);
   res.locals.user = req.user;
   res.locals.flash = req.flash;
   res.locals.config = config.app;
   next();
 });
+
 
 // Request logging middleware
 app.use(logger.logRequest.bind(logger));
@@ -184,8 +192,10 @@ async function testDatabaseConnection() {
 // Application startup function
 async function startApplication() {
   try {
+    // console.log('Starting Call Manager application...');
     // Log startup information
     logger.info('Starting Call Manager application...');
+   
     
     // Test database connection
     const dbConnected = await testDatabaseConnection();
@@ -196,6 +206,7 @@ async function startApplication() {
     
     // Start server
     const server = app.listen(config.app.port, () => {
+      console.log(`Server is running on port ${config.app.port}`);
       logger.success(`Server started on port ${config.app.port}`);
       logger.success(`Environment: ${config.app.environment}`);
       logger.success(`Database: ${config.database.host}:${config.database.database}`);
@@ -239,8 +250,10 @@ async function startApplication() {
 }
 
 // Start the application
-if (import.meta.url === `file://${process.argv[1]}`) {
-  startApplication();
-}
+// if (import.meta.url === `file://${process.argv[1]}`) {
+//   startApplication();
+// }
+
+startApplication();
 
 export default app;

@@ -5,6 +5,9 @@ import express from 'express';
 import { requireSuperAdmin, requireAuth } from '../middlewares/auth.js';
 import { asyncHandler } from '../middlewares/errorHandler.js';
 import adminController from '../controller/adminController.js';
+import csrf from 'csurf';
+
+const csrfProtection = csrf({ cookie: false });
 
 const router = express.Router();
 
@@ -42,10 +45,21 @@ router.get('/callers/new', adminController.showCreateCaller);
 router.post('/callers', asyncHandler(adminController.createCaller));
 
 // GET /admin/callers/upload - Show CSV upload form
-router.get('/callers/upload', adminController.showUploadCallers);
+router.get(
+  '/callers/upload',
+//   csrfProtection,
+  adminController.showUploadCallers
+);
 
 // POST /admin/callers/upload - Handle CSV upload
-router.post('/callers/upload', adminController.getUpload().single('csvFile'), asyncHandler(adminController.handleCSVUpload));
+// router.post('/callers/upload', adminController.getUpload().single('csvFile'), csrfProtection, asyncHandler(adminController.handleCSVUpload));
+
+router.post(
+  '/callers/upload',
+  adminController.getUpload().single('csvFile'), // parse file first
+  csrfProtection, // then validate CSRF
+  asyncHandler(adminController.handleCSVUpload)
+);
 
 // GET /admin/callers/download-template - Download CSV template
 router.get('/callers/download-template', adminController.downloadCSVTemplate);

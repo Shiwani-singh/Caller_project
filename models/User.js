@@ -19,6 +19,7 @@ class User extends BaseModel {
 
       // Hash the password
       const hashedPassword = await bcrypt.hash(password, 12);
+      console.log('Hashed Password:', hashedPassword);
 
       const sql = `
         INSERT INTO ${this.tableName} (name, email, phone, password, role_id)
@@ -26,7 +27,7 @@ class User extends BaseModel {
       `;
       
       const params = [name, email, phone, hashedPassword, role_id];
-      
+      console.log('Hashed Password:', hashedPassword);
       const result = await this.query(sql, params);
       logger.auth(`User created successfully: ${email}`);
       

@@ -1,0 +1,39 @@
+<h1>Create Caller</h1>
+
+<% if (flash && flash.error && flash.error.length > 0) { %>
+  <div class="alert alert-danger">
+    <%= flash.error[0] %>
+  </div>
+<% } %>
+<% if (flash && flash.success && flash.success.length > 0) { %>
+  <div class="alert alert-success">
+    <%= flash.success[0] %>
+  </div>
+<% } %>
+
+<form action="/admin/callers" method="POST">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+  <div class="mb-3">
+    <label for="name" class="form-label">Name<span class="text-danger">*</span></label>
+    <input type="text" class="form-control" id="name" name="name" required minlength="2" maxlength="100">
+  </div>
+
+  <div class="mb-3">
+    <label for="email" class="form-label">Email<span class="text-danger">*</span></label>
+    <input type="email" class="form-control" id="email" name="email" required minlength="5" maxlength="255">
+  </div>
+
+  <div class="mb-3">
+    <label for="phone" class="form-label">Phone<span class="text-danger">*</span></label>
+    <input type="text" class="form-control" id="phone" name="phone" required minlength="10" maxlength="20" pattern="^[\+]?[0-9\s\-\(\)]+$">
+    <div class="form-text">Format: digits, spaces, dashes, parentheses, optional +</div>
+  </div>
+
+  <div class="mb-3">
+    <label for="batch_id" class="form-label">Batch ID (optional)</label>
+    <input type="text" class="form-control" id="batch_id" name="batch_id" maxlength="50">
+  </div>
+
+  <button type="submit" class="btn btn-success">Create</button>
+</form>
