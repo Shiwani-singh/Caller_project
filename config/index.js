@@ -50,7 +50,6 @@ const config = {
       max: 5 // limit each IP to 5 requests per windowMs
     }
   },
-
   // File upload configuration
   upload: {
     maxFileSize: 1 * 1024 * 1024, // 1MB (updated to match validation)
@@ -58,7 +57,6 @@ const config = {
     maxRows: 200
   }
 };
-
 // Validate required configuration
 const requiredConfigs = [
   'database.host',

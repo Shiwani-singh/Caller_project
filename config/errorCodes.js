@@ -150,7 +150,6 @@ const errorCodes = {
     message: 'Server is under maintenance. Please try again later',
     statusCode: 503
   },
-
   // Rate limiting errors (1700-1799)
   RATE_LIMIT_EXCEEDED: {
     code: 1700,
@@ -158,7 +157,6 @@ const errorCodes = {
     statusCode: 429
   }
 };
-
 // Helper function to get error details by code
 function getErrorByCode(code) {
   return errorCodes[code] || {
@@ -172,7 +170,6 @@ function getErrorByCode(code) {
 function getAllErrorCodes() {
   return errorCodes;
 }
-
 export {
   errorCodes,
   getErrorByCode,
