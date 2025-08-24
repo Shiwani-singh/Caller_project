@@ -7,7 +7,7 @@ import { asyncHandler } from '../middlewares/errorHandler.js';
 import adminController from '../controller/adminController.js';
 import csrf from 'csurf';
 
-const csrfProtection = csrf({ cookie: false });
+const csrfProtection = csrf();
 
 const router = express.Router();
 

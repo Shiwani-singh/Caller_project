@@ -123,7 +123,7 @@
                 <ul class="pagination justify-content-center">
                   <% if (pagination.page > 1) { %>
                     <li class="page-item">
-                      <a class="page-link" href="/admin/users?page=<%= pagination.page - 1 %>&<%= new URLSearchParams({...locals, page: undefined}).toString() %>">
+                      <a class="page-link" href="/admin/users?page=<%= pagination.page - 1 %>">
                         Previous
                       </a>
                     </li>
@@ -131,7 +131,7 @@
                   
                   <% for (let i = 1; i <= pagination.pages; i++) { %>
                     <li class="page-item <%= i === pagination.page ? 'active' : '' %>">
-                      <a class="page-link" href="/admin/users?page=<%= i %>&<%= new URLSearchParams({...locals, page: undefined}).toString() %>">
+                      <a class="page-link" href="/admin/users?page=<%= i %>">
                         <%= i %>
                       </a>
                     </li>
@@ -139,7 +139,7 @@
                   
                   <% if (pagination.page < pagination.pages) { %>
                     <li class="page-item">
-                      <a class="page-link" href="/admin/users?page=<%= pagination.page + 1 %>&<%= new URLSearchParams({...locals, page: undefined}).toString() %>">
+                      <a class="page-link" href="/admin/users?page=<%= pagination.page + 1 %>&">
                         Next
                       </a>
                     </li>

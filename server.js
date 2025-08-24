@@ -89,7 +89,15 @@ const csrfProtection = csrf();
 // Flash messages
 app.use(flash());
 
-app.use(csrfProtection);
+app.use((req, res, next) => {
+  logger.log('here ----->', req.method)
+  logger.log('here ----->', req.path)
+  if (req.path === "/admin/callers/upload" && req.method === 'POST') {
+    // ⛔ skip CSRF check for this route here
+    return next();
+  }
+  csrfProtection(req, res, next);
+});
 
 // CSRF protection
 // app.use(csrf({ cookie: false }));
@@ -101,6 +109,10 @@ app.use(csrfProtection);
 
 // Global middleware for CSRF token
 app.use((req, res, next) => {
+  if (req.path === "/admin/callers/upload" && req.method === 'POST') {
+    // ⛔ skip CSRF check for this route here
+    return next();
+  }
   const token= req.csrfToken()
   res.locals.csrfToken = token;
   console.log("csrf token in server.js", token);
